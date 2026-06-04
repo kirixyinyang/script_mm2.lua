@@ -1,9 +1,226 @@
--- J.A.R.V.I.S | Menu Module for MM2 (FIXED)
+-- J.A.R.V.I.S | MM2 | PART 1/2
+-- ESP + Aimbot + Fly + Anti-AFK
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local StartTime = tick()
+
+local colors = {
+    primary = Color3.fromRGB(80, 255, 100),
+    dark = Color3.fromRGB(5, 12, 7),
+    panel = Color3.fromRGB(8, 18, 10),
+    text = Color3.fromRGB(220, 255, 220),
+    textDim = Color3.fromRGB(80, 140, 90),
+    murderer = Color3.fromRGB(255, 50, 50),
+    sheriff = Color3.fromRGB(50, 80, 255),
+    innocent = Color3.fromRGB(50, 255, 80),
+    gun = Color3.fromRGB(0, 150, 255),
+    danger = Color3.fromRGB(255, 30, 30),
+    warning = Color3.fromRGB(255, 200, 0)
+}
+
+_G.Settings = {
+    playerESP = false, nametagESP = false, xray = false, highlightGun = false,
+    espColor = "Green", aimbot = false, aimTarget = "Murder", aimFOV = 250,
+    autoShoot = false, fly = false, antiAFK = false
+}
+
+local function formatTime(s)
+    local m = math.floor((s % 3600) / 60)
+    local sec = math.floor(s % 60)
+    return string.format("%02d:%02d", m, sec)
+end
+
+function getRole(p)
+    if not p then return "Innocent" end
+    local function h(n)
+        if p.Character and p.Character:FindFirstChild(n) then return true end
+        local bp = p:FindFirstChild("Backpack")
+        if bp and bp:FindFirstChild(n) then return true end
+        return false
+    end
+    if h("Knife") then return "Murder" end
+    if h("Gun") then return "Sheriff" end
+    return "Innocent"
+end
+
+local function getHRP(p)
+    if p and p.Character then return p.Character:FindFirstChild("HumanoidRootPart") end
+    return nil
+end
+
+-- ========== ESP ==========
+local espObjects = {}
+
+local function getESPColor(role)
+    if role == "Murder" then return colors.murderer end
+    if role == "Sheriff" then return colors.sheriff end
+    if _G.Settings.espColor == "Green" then return Color3.fromRGB(0, 255, 65)
+    elseif _G.Settings.espColor == "Yellow" then return Color3.fromRGB(255, 220, 0)
+    else return Color3.fromRGB(255, 60, 60) end
+end
+
+local function addESP(plr)
+    if plr == LocalPlayer then return end
+    local function setup(char)
+        if not char then return end
+        task.wait(0.1)
+        local hl = Instance.new("Highlight")
+        hl.Name = "JARVIS_ESP"
+        hl.FillTransparency = _G.Settings.xray and 0.35 or 0.6
+        hl.OutlineTransparency = 0.1
+        hl.DepthMode = _G.Settings.xray and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
+        hl.Parent = char
+        espObjects[plr] = hl
+    end
+    if plr.Character then setup(plr.Character) end
+    plr.CharacterAdded:Connect(setup)
+end
+
+local function updateESP()
+    if not _G.Settings.playerESP then
+        for _, obj in pairs(espObjects) do pcall(function() obj:Destroy() end) end
+        espObjects = {}
+        return
+    end
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            if not espObjects[plr] and plr.Character then addESP(plr) end
+            if espObjects[plr] and plr.Character then
+                local role = getRole(plr)
+                espObjects[plr].FillColor = getESPColor(role)
+                espObjects[plr].OutlineColor = getESPColor(role)
+                espObjects[plr].FillTransparency = _G.Settings.xray and 0.35 or 0.6
+                espObjects[plr].DepthMode = _G.Settings.xray and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
+            end
+        end
+    end
+end
+
+for _, plr in pairs(Players:GetPlayers()) do
+    if plr ~= LocalPlayer then addESP(plr) end
+end
+Players.PlayerAdded:Connect(addESP)
+
+task.spawn(function()
+    while true do
+        pcall(updateESP)
+        task.wait(0.3)
+    end
+end)
+
+-- ========== AIMBOT ==========
+local function getAimTarget()
+    local targetRole = _G.Settings.aimTarget
+    local closestDist = _G.Settings.aimFOV
+    local closestHRP = nil
+    local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local role = getRole(player)
+            local match = (targetRole == "Murder" and role == "Murder") or (targetRole == "Sheriff" and role == "Sheriff") or (targetRole == "Innocent" and role == "Innocent")
+            if not match then continue end
+            local hrp = getHRP(player)
+            if not hrp then continue end
+            local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+            if not onScreen then continue end
+            local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+            if dist < closestDist then
+                closestDist = dist
+                closestHRP = hrp
+            end
+        end
+    end
+    return closestHRP
+end
+
+task.spawn(function()
+    while true do
+        if _G.Settings.aimbot then
+            local target = getAimTarget()
+            if target then
+                pcall(function() Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position) end)
+                if _G.Settings.autoShoot then
+                    local remote = game:GetService("ReplicatedStorage"):FindFirstChild("ThrowKnife")
+                    if remote then pcall(function() remote:FireServer() end) end
+                end
+            end
+        end
+        task.wait(0.03)
+    end
+end)
+
+-- ========== FLY ==========
+local flying = false
+local bodyVelocity = nil
+
+local function startFly()
+    flying = true
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if humanoid then humanoid.PlatformStand = true end
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(1,1,1) * 100000
+    bodyVelocity.Parent = hrp
+end
+
+local function stopFly()
+    flying = false
+    if bodyVelocity then bodyVelocity:Destroy() end
+    local char = LocalPlayer.Character
+    if char then
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if humanoid then humanoid.PlatformStand = false end
+    end
+end
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        _G.Settings.fly = not _G.Settings.fly
+        if _G.Settings.fly then startFly() else stopFly() end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if flying then
+        local dir = Vector3.new()
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + Vector3.new(0,0,-1) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir + Vector3.new(0,0,1) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir + Vector3.new(-1,0,0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + Vector3.new(1,0,0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir + Vector3.new(0,-1,0) end
+        dir = (Camera.CFrame.RightVector * dir.X + Camera.CFrame.UpVector * dir.Y + Camera.CFrame.LookVector * dir.Z) * 50
+        if bodyVelocity then bodyVelocity.Velocity = dir end
+    end
+end)
+
+-- ========== ANTI-AFK ==========
+local function startAntiAFK()
+    pcall(function()
+        local vu = game:GetService("VirtualUser")
+        LocalPlayer.Idled:Connect(function()
+            if _G.Settings.antiAFK then vu:CaptureController(); vu:ClickButton2(Vector2.new()) end
+        end)
+    end)
+end
+if _G.Settings.antiAFK then startAntiAFK() end
+-- J.A.R.V.I.S | MM2 | PART 2/2
+-- MENU + BUTTONS + SCROLLING
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 local StartTime = tick()
 
 local colors = {
@@ -39,7 +256,7 @@ local function formatTime(s)
     return string.format("%02d:%02d", m, sec)
 end
 
-local function getRole(p)
+function getRole(p)
     if not p then return "Innocent" end
     local function h(n)
         if p.Character and p.Character:FindFirstChild(n) then return true end
@@ -52,6 +269,88 @@ local function getRole(p)
     return "Innocent"
 end
 
+local function getHRP(p)
+    if p and p.Character then return p.Character:FindFirstChild("HumanoidRootPart") end
+    return nil
+end
+
+-- ========== ФУНКЦИИ ДЛЯ КНОПОК ==========
+
+local function killAll()
+    local knife = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife")
+    if not knife then return end
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local hrp = getHRP(player)
+            if hrp then
+                pcall(function() LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame; task.wait(0.05) end)
+            end
+        end
+    end
+end
+
+local function killSheriff()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and getRole(player) == "Sheriff" then
+            local hrp = getHRP(player)
+            if hrp then LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame end
+            return
+        end
+    end
+end
+
+local function teleportToMurderer()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and getRole(player) == "Murder" then
+            local hrp = getHRP(player)
+            if hrp then LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame + Vector3.new(3,0,0) end
+            return
+        end
+    end
+end
+
+local function teleportToSheriff()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and getRole(player) == "Sheriff" then
+            local hrp = getHRP(player)
+            if hrp then LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame + Vector3.new(3,0,0) end
+            return
+        end
+    end
+end
+
+local function teleportToGun()
+    for _, item in pairs(workspace:GetDescendants()) do
+        if item:IsA("Tool") and (item.Name:lower():find("gun") or item.Name:lower():find("pistol")) then
+            local handle = item:FindFirstChild("Handle") or item:FindFirstChildOfClass("BasePart")
+            if handle then LocalPlayer.Character.HumanoidRootPart.CFrame = handle.CFrame + Vector3.new(0,3,0); return true end
+        end
+    end
+    return false
+end
+
+local function isVisible(player)
+    if not player or not player.Character then return false end
+    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    local origin = Camera.CFrame.Position
+    local ray = Ray.new(origin, (hrp.Position - origin).Unit * (origin - hrp.Position).Magnitude)
+    local hit = workspace:FindPartOnRay(ray, LocalPlayer.Character)
+    if hit then return Players:GetPlayerFromCharacter(hit.Parent) == player end
+    return false
+end
+
+local function shotButton()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and getRole(player) == "Murder" and isVisible(player) then
+            local hrp = getHRP(player)
+            if hrp then Camera.CFrame = CFrame.new(Camera.CFrame.Position, hrp.Position) end
+            return
+        end
+    end
+end
+
+-- ========== МЕНЮ ==========
 local gui = Instance.new("ScreenGui")
 gui.Name = "JARVIS_Menu"
 gui.Parent = game:GetService("CoreGui")
@@ -135,16 +434,19 @@ content.Position = UDim2.new(0, 105, 0, 50)
 content.BackgroundColor3 = Color3.fromRGB(8, 18, 10)
 content.BackgroundTransparency = 0.5
 content.BorderSizePixel = 0
-content.ScrollBarThickness = 4
+content.ScrollBarThickness = 6
 content.ScrollBarImageColor3 = colors.primary
 content.CanvasSize = UDim2.new(0, 0, 0, 0)
-content.AutomaticCanvasSize = Enum.AutomaticSize.Y
 content.Parent = main
 
 local contentList = Instance.new("UIListLayout")
 contentList.Padding = UDim.new(0, 6)
 contentList.SortOrder = Enum.SortOrder.LayoutOrder
 contentList.Parent = content
+
+contentList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    content.CanvasSize = UDim2.new(0, 0, 0, contentList.AbsoluteContentSize.Y + 10)
+end)
 
 local pad = Instance.new("UIPadding")
 pad.PaddingTop = UDim.new(0, 8)
@@ -296,11 +598,11 @@ local function clear()
     end
 end
 
-local tabs = {"INFO", "KILLER", "ESP", "AIM", "MISC"}
+local tabsList = {"INFO", "KILLER", "ESP", "AIM", "MISC"}
 local tabBtns = {}
 local current = nil
 
-for i, name in pairs(tabs) do
+for i, name in pairs(tabsList) do
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 0, 42)
     btn.Position = UDim2.new(0, 0, 0, (i-1) * 42)
@@ -367,13 +669,13 @@ for i, name in pairs(tabs) do
             
         elseif name == "KILLER" then
             addSep("MURDERER ACTIONS")
-            addButton("KILL ALL", colors.murderer, function() end)
-            addButton("KILL SHERIFF", colors.murderer, function() end)
-            addButton("TELEPORT TO MURDERER", colors.murderer, function() end)
-            addButton("SHOT BUTTON", colors.murderer, function() end)
+            addButton("KILL ALL", colors.murderer, killAll)
+            addButton("KILL SHERIFF", colors.murderer, killSheriff)
+            addButton("TELEPORT TO MURDERER", colors.murderer, teleportToMurderer)
+            addButton("SHOT BUTTON", colors.murderer, shotButton)
             addSep("SHERIFF ACTIONS")
-            addButton("TELEPORT TO SHERIFF", colors.sheriff, function() end)
-            addButton("TELEPORT TO GUN", colors.gun, function() end)
+            addButton("TELEPORT TO SHERIFF", colors.sheriff, teleportToSheriff)
+            addButton("TELEPORT TO GUN", colors.gun, teleportToGun)
             
         elseif name == "ESP" then
             addToggle("PLAYER ESP", _G.Settings.playerESP, function(v) _G.Settings.playerESP = v end)
@@ -417,49 +719,8 @@ end
 
 task.wait(0.1)
 if tabBtns["INFO"] then
-    tabBtns["INFO"].btn.MouseButton1Click:Connect(function()
-        for _, tb in pairs(tabBtns) do
-            tb.btn.TextColor3 = colors.textDim
-            tb.line.Visible = false
-        end
-        tabBtns["INFO"].btn.TextColor3 = colors.primary
-        tabBtns["INFO"].line.Visible = true
-        current = "INFO"
-        clear()
-        addInfo("NICK", LocalPlayer.Name, colors.primary)
-        local roleVal = addInfo("ROLE", getRole(LocalPlayer), getRole(LocalPlayer) == "Murder" and colors.murderer or (getRole(LocalPlayer) == "Sheriff" and colors.sheriff or colors.innocent))
-        local timeVal = addInfo("TIME", "00:00", colors.primary)
-        addInfo("STATUS", "ACTIVE", colors.primary)
-        addInfo("RISK", "DANGER!", colors.danger)
-        addSep("WARNING")
-        local warn = Instance.new("TextLabel")
-        warn.Size = UDim2.new(1, 0, 0, 40)
-        warn.BackgroundTransparency = 1
-        warn.Text = "Using cheats may result in a ban. Use at your own risk!"
-        warn.TextColor3 = colors.warning
-        warn.TextSize = 10
-        warn.Font = Enum.Font.Gotham
-        warn.TextWrapped = true
-        warn.LayoutOrder = order + 1
-        order = order + 1
-        warn.Parent = content
-        
-        task.spawn(function()
-            while current == "INFO" do
-                local elapsed = tick() - StartTime
-                if timeVal then timeVal.Text = formatTime(elapsed) end
-                if roleVal then
-                    local newRole = getRole(LocalPlayer)
-                    roleVal.Text = newRole
-                    if newRole == "Murder" then roleVal.TextColor3 = colors.murderer
-                    elseif newRole == "Sheriff" then roleVal.TextColor3 = colors.sheriff
-                    else roleVal.TextColor3 = colors.innocent end
-                end
-                task.wait(1)
-            end
-        end)
-    end)
     tabBtns["INFO"].btn.MouseButton1Click:Fire()
 end
 
-print("J.A.R.V.I.S: Menu Module Loaded")
+print("J.A.R.V.I.S: PART 2/2 LOADED - MENU + FUNCTIONS")
+print("J.A.R.V.I.S: PART 1/2 LOADED - ESP + AIMBOT + FLY")
