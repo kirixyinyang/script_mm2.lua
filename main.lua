@@ -1,3 +1,6 @@
+-- J.A.R.V.I.S | Main Loader for MM2 (FIXED)
+-- Сначала загружает ВСЕ модули, потом запускает
+
 local repo = "https://raw.githubusercontent.com/kirixyinyang/script_mm2.lua/refs/heads/main/"
 
 local function showLoadingStep(text, step, total)
@@ -73,41 +76,44 @@ local function updateLoadingBar(bar, step, total)
     end
 end
 
-local loadingGui, loadingBar = showLoadingStep("Initializing...", 1, 4)
+local loadingGui, loadingBar = showLoadingStep("Loading modules...", 1, 4)
 task.wait(1)
 
--- Исправленная загрузка: модули загружаются и выполняются без лишних аргументов
-local function loadAndRunModule(name, barStep)
-    local url = repo .. name
+local modules = {
+    {name = "esp.lua", step = 2},
+    {name = "menu.lua", step = 3},
+    {name = "utils.lua", step = 4}
+}
+
+local loadedModules = {}
+
+for _, mod in pairs(modules) do
+    local url = repo .. mod.name
     local success, content = pcall(function()
         return game:HttpGet(url)
     end)
     if success then
         local func, err = loadstring(content)
         if func then
-            updateLoadingBar(loadingBar, barStep, 4)
-            func() -- <-- ВЫЗЫВАЕМ БЕЗ АРГУМЕНТОВ
-            return true
+            loadedModules[mod.name] = func
+            updateLoadingBar(loadingBar, mod.step, 4)
         else
-            warn("Error in " .. name .. ": " .. err)
-            return false
+            warn("Error in " .. mod.name .. ": " .. err)
         end
     else
-        warn("Failed load " .. name .. ": " .. content)
-        return false
+        warn("Failed load " .. mod.name .. ": " .. content)
     end
+    task.wait(0.5)
 end
 
-loadAndRunModule("esp.lua", 2)
 task.wait(0.5)
-
-loadAndRunModule("menu.lua", 3)
-task.wait(0.5)
-
-loadAndRunModule("utils.lua", 4)
-task.wait(0.8)
 
 if loadingGui then loadingGui:Destroy() end
+
+for name, func in pairs(loadedModules) do
+    pcall(func)
+    task.wait(0.3)
+end
 
 local notifGui = Instance.new("ScreenGui")
 notifGui.Name = "JarvisNotify"
@@ -138,5 +144,5 @@ notifText.Parent = notifFrame
 task.wait(3)
 notifGui:Destroy()
 
-print("J.A.R.V.I.S: ALL MODULES LOADED")
+print("J.A.R.V.I.S: ALL MODULES LOADED AND EXECUTED")
 print("INFO | KILLER | ESP | AIM | MISC")
