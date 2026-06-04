@@ -1,5 +1,4 @@
--- J.A.R.V.I.S | MM2 | PART 1/3 V8.0
-
+-- J.A.R.V.I.S | MM2 | PART 1/4
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -46,6 +45,14 @@ local function getHRP(p)
     return nil
 end
 
+local function formatTime(s)
+    local m = math.floor((s % 3600) / 60)
+    local sec = math.floor(s % 60)
+    return string.format("%02d:%02d", m, sec)
+end
+
+print("J.A.R.V.I.S: PART 1/4 LOADED")
+-- J.A.R.V.I.S | MM2 | PART 2/4
 local espObjects = {}
 
 local function getESPColor(role)
@@ -236,139 +243,8 @@ local function startAntiAFK()
 end
 if _G.Settings.antiAFK then startAntiAFK() end
 
-print("J.A.R.V.I.S: PART 1/3 LOADED")
--- J.A.R.V.I.S | MM2 | PART 2/3 V8.0
-
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local StartTime = tick()
-
-local colors = {
-    primary = Color3.fromRGB(80, 255, 100),
-    dark = Color3.fromRGB(5, 12, 7),
-    panel = Color3.fromRGB(8, 18, 10),
-    text = Color3.fromRGB(220, 255, 220),
-    textDim = Color3.fromRGB(80, 140, 90),
-    murderer = Color3.fromRGB(255, 50, 50),
-    sheriff = Color3.fromRGB(50, 80, 255),
-    innocent = Color3.fromRGB(50, 255, 80),
-    gun = Color3.fromRGB(0, 150, 255),
-    danger = Color3.fromRGB(255, 30, 30),
-    warning = Color3.fromRGB(255, 200, 0)
-}
-
-_G.Settings = _G.Settings or {}
-
-function getRole(p)
-    if not p then return "Innocent" end
-    local function h(n)
-        if p.Character and p.Character:FindFirstChild(n) then return true end
-        local bp = p:FindFirstChild("Backpack")
-        if bp and bp:FindFirstChild(n) then return true end
-        return false
-    end
-    if h("Knife") then return "Murder" end
-    if h("Gun") then return "Sheriff" end
-    return "Innocent"
-end
-
-local function getHRP(p)
-    if p and p.Character then return p.Character:FindFirstChild("HumanoidRootPart") end
-    return nil
-end
-
-local function formatTime(s)
-    local m = math.floor((s % 3600) / 60)
-    local sec = math.floor(s % 60)
-    return string.format("%02d:%02d", m, sec)
-end
-
-local function killAll()
-    local knife = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife")
-    if not knife then return end
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local hrp = getHRP(player)
-            if hrp then
-                pcall(function() LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame; task.wait(0.05) end)
-            end
-        end
-    end
-end
-
-local function killSheriff()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and getRole(player) == "Sheriff" then
-            local hrp = getHRP(player)
-            if hrp then LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame end
-            return
-        end
-    end
-end
-
-local function teleportToMurderer()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and getRole(player) == "Murder" then
-            local hrp = getHRP(player)
-            if hrp then LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame + Vector3.new(3,0,0) end
-            return
-        end
-    end
-end
-
-local function teleportToSheriff()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and getRole(player) == "Sheriff" then
-            local hrp = getHRP(player)
-            if hrp then LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame + Vector3.new(3,0,0) end
-            return
-        end
-    end
-end
-
-local function teleportToGun()
-    for _, item in pairs(workspace:GetDescendants()) do
-        if item:IsA("Tool") and (item.Name:lower():find("gun") or item.Name:lower():find("pistol")) then
-            local handle = item:FindFirstChild("Handle") or item:FindFirstChildOfClass("BasePart")
-            if handle then LocalPlayer.Character.HumanoidRootPart.CFrame = handle.CFrame + Vector3.new(0,3,0); return true end
-        end
-    end
-    return false
-end
-
-local autoShotDragging = false
-local autoShotDragStart, autoShotBtnStart
-
-local function autoShot()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and getRole(player) == "Murder" and isVisible(player) then
-            local hrp = getHRP(player)
-            if hrp then
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, hrp.Position)
-                local gun = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Gun")
-                if gun and gun:IsA("Tool") then
-                    local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Shoot")
-                    if remote then remote:FireServer(hrp.Position) end
-                end
-            end
-            return
-        end
-    end
-end
-
-local function isVisible(player)
-    if not player or not player.Character then return false end
-    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
-    local origin = Camera.CFrame.Position
-    local ray = Ray.new(origin, (hrp.Position - origin).Unit * (origin - hrp.Position).Magnitude)
-    local hit = workspace:FindPartOnRay(ray, LocalPlayer.Character)
-    if hit then return Players:GetPlayerFromCharacter(hit.Parent) == player end
-    return false
-end
+print("J.A.R.V.I.S: PART 2/4 LOADED")
+-- J.A.R.V.I.S | MM2 | PART 3/4
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "JARVIS_Menu"
@@ -435,9 +311,6 @@ close.TextColor3 = Color3.fromRGB(255, 80, 80)
 close.TextSize = 14
 close.Font = Enum.Font.GothamBold
 close.Parent = title
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(1, 0)
-closeCorner.Parent = close
 close.MouseButton1Click:Connect(function() gui.Visible = false end)
 
 local sidebar = Instance.new("Frame")
@@ -533,12 +406,7 @@ local function addToggle(text, setting, callback)
         local goal = val and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
         TweenService:Create(knob, TweenInfo.new(0.2), {Position = goal}):Play()
         callback(val)
-        if text == "AIMBOT" and val == false then
-            fovCircle.Visible = false
-        elseif text == "AIMBOT" and val == true then
-            fovCircle.Visible = not _G.Settings.hideFOV
-        end
-        if text == "Hide FOV" then
+        if text == "HIDE FOV" then
             fovCircle.Visible = not val
         end
     end)
@@ -696,56 +564,71 @@ for i, name in pairs(tabsList) do
             
         elseif name == "KILLER" then
             addSep("MURDERER ACTIONS")
-            addButton("KILL ALL", colors.murderer, killAll)
-            addButton("KILL SHERIFF", colors.murderer, killSheriff)
-            addButton("TELEPORT TO MURDERER", colors.murderer, teleportToMurderer)
+            addButton("KILL ALL", colors.murderer, function() end)
+            addButton("KILL SHERIFF", colors.murderer, function() end)
+            addButton("TELEPORT TO MURDERER", colors.murderer, function() end)
             addSep("SHERIFF ACTIONS")
-            addButton("TELEPORT TO SHERIFF", colors.sheriff, teleportToSheriff)
-            addButton("TELEPORT TO GUN", colors.gun, teleportToGun)
+            addButton("TELEPORT TO SHERIFF", colors.sheriff, function() end)
+            addButton("TELEPORT TO GUN", colors.gun, function() end)
         end
     end)
 end
 
-print("J.A.R.V.I.S: PART 2/3 LOADED")
--- J.A.R.V.I.S | MM2 | PART 3/3 V8.0
+print("J.A.R.V.I.S: PART 3/4 LOADED")
+-- J.A.R.V.I.S | MM2 | PART 4/4
 
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-
-local colors = {
-    primary = Color3.fromRGB(80, 255, 100),
-    dark = Color3.fromRGB(5, 12, 7),
-    panel = Color3.fromRGB(8, 18, 10),
-    text = Color3.fromRGB(220, 255, 220),
-    textDim = Color3.fromRGB(80, 140, 90),
-    murderer = Color3.fromRGB(255, 50, 50),
-    sheriff = Color3.fromRGB(50, 80, 255),
-    innocent = Color3.fromRGB(50, 255, 80),
-    gun = Color3.fromRGB(0, 150, 255),
-    danger = Color3.fromRGB(255, 30, 30),
-    warning = Color3.fromRGB(255, 200, 0)
-}
-
-_G.Settings = _G.Settings or {}
-
-function getRole(p)
-    if not p then return "Innocent" end
-    local function h(n)
-        if p.Character and p.Character:FindFirstChild(n) then return true end
-        local bp = p:FindFirstChild("Backpack")
-        if bp and bp:FindFirstChild(n) then return true end
-        return false
+local function killAll()
+    local knife = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife")
+    if not knife then return end
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local hrp = getHRP(player)
+            if hrp then
+                pcall(function() LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame; task.wait(0.05) end)
+            end
+        end
     end
-    if h("Knife") then return "Murder" end
-    if h("Gun") then return "Sheriff" end
-    return "Innocent"
 end
 
-local autoShotDragging = false
-local autoShotDragStart, autoShotBtnStart
+local function killSheriff()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and getRole(player) == "Sheriff" then
+            local hrp = getHRP(player)
+            if hrp then LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame end
+            return
+        end
+    end
+end
+
+local function teleportToMurderer()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and getRole(player) == "Murder" then
+            local hrp = getHRP(player)
+            if hrp then LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame + Vector3.new(3,0,0) end
+            return
+        end
+    end
+end
+
+local function teleportToSheriff()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and getRole(player) == "Sheriff" then
+            local hrp = getHRP(player)
+            if hrp then LocalPlayer.Character.HumanoidRootPart.CFrame = hrp.CFrame + Vector3.new(3,0,0) end
+            return
+        end
+    end
+end
+
+local function teleportToGun()
+    for _, item in pairs(workspace:GetDescendants()) do
+        if item:IsA("Tool") and (item.Name:lower():find("gun") or item.Name:lower():find("pistol")) then
+            local handle = item:FindFirstChild("Handle") or item:FindFirstChildOfClass("BasePart")
+            if handle then LocalPlayer.Character.HumanoidRootPart.CFrame = handle.CFrame + Vector3.new(0,3,0); return true end
+        end
+    end
+    return false
+end
 
 local function autoShot()
     for _, player in pairs(Players:GetPlayers()) do
@@ -792,6 +675,8 @@ autoShotLabel.Parent = autoShotBtn
 
 autoShotBtn.MouseButton1Click:Connect(autoShot)
 
+local autoShotDragging = false
+local autoShotDragStart, autoShotBtnStart
 autoShotBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch then
         autoShotDragging = true
@@ -802,7 +687,6 @@ autoShotBtn.InputBegan:Connect(function(input)
         end)
     end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
     if autoShotDragging and input.UserInputType == Enum.UserInputType.Touch then
         local delta = input.Position - autoShotDragStart
@@ -822,7 +706,7 @@ floatingGui.ResetOnSpawn = false
 
 local jarvisBtn = Instance.new("ImageButton")
 jarvisBtn.Size = UDim2.new(0, 65, 0, 65)
-jarvisBtn.Position = UDim2.new(0.85, 0, 0.85, 0)
+jarvisBtn.Position = UDim2.new(0.85, 0, 0.82, 0)
 jarvisBtn.BackgroundColor3 = Color3.fromRGB(80, 255, 100)
 jarvisBtn.BackgroundTransparency = 0.15
 jarvisBtn.BorderSizePixel = 0
@@ -846,215 +730,10 @@ jarvisLabel.Parent = jarvisBtn
 local pulse = TweenService:Create(jarvisBtn, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true), {BackgroundTransparency = 0.05})
 pulse:Play()
 
-local gui = game:GetService("CoreGui"):FindFirstChild("JARVIS_Menu")
-local tabBtns = {}
-local current = nil
-local order = 0
-local content = nil
-local contentList = nil
-local fovCircle = nil
-local updateFOVCircle = nil
-
-if gui then
-    content = gui:FindFirstChild("MainFrame"):FindFirstChild("ContentFrame")
-    if content then
-        contentList = content:FindFirstChild("UIListLayout")
-    end
-    
-    local sidebar = gui:FindFirstChild("MainFrame"):FindFirstChild("Sidebar")
-    if sidebar then
-        for _, btn in pairs(sidebar:GetChildren()) do
-            if btn:IsA("TextButton") then
-                local name = btn.Text
-                if name == "ESP" or name == "AIM" or name == "MISC" then
-                    tabBtns[name] = {btn = btn, line = btn:FindFirstChildOfClass("Frame")}
-                end
-            end
-        end
-    end
-    
-    local function clear()
-        if not content then return end
-        for _, child in pairs(content:GetChildren()) do
-            if child:IsA("Frame") or child:IsA("TextButton") or child:IsA("TextLabel") then
-                if child ~= contentList then
-                    child:Destroy()
-                end
-            end
-        end
-    end
-    
-    local function addToggle(text, setting, callback)
-        if not content then return end
-        order = order + 1
-        local row = Instance.new("Frame")
-        row.Size = UDim2.new(1, 0, 0, 44)
-        row.BackgroundColor3 = colors.panel
-        row.BackgroundTransparency = 0.3
-        row.LayoutOrder = order
-        row.Parent = content
-        
-        local rowCorner = Instance.new("UICorner")
-        rowCorner.CornerRadius = UDim.new(0, 8)
-        rowCorner.Parent = row
-        
-        local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(0.65, 0, 1, 0)
-        lbl.Position = UDim2.new(0, 12, 0, 0)
-        lbl.BackgroundTransparency = 1
-        lbl.Text = text
-        lbl.TextColor3 = colors.text
-        lbl.TextSize = 12
-        lbl.Font = Enum.Font.GothamSemibold
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.Parent = row
-        
-        local bg = Instance.new("Frame")
-        bg.Size = UDim2.new(0, 40, 0, 20)
-        bg.Position = UDim2.new(1, -50, 0.5, -10)
-        bg.BackgroundColor3 = setting and colors.primary or Color3.fromRGB(40,40,50)
-        bg.Parent = row
-        
-        local bgCorner = Instance.new("UICorner")
-        bgCorner.CornerRadius = UDim.new(1, 0)
-        bgCorner.Parent = bg
-        
-        local knob = Instance.new("Frame")
-        knob.Size = UDim2.new(0, 16, 0, 16)
-        knob.Position = setting and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
-        knob.BackgroundColor3 = Color3.fromRGB(255,255,255)
-        knob.Parent = bg
-        
-        local knobCorner = Instance.new("UICorner")
-        knobCorner.CornerRadius = UDim.new(1, 0)
-        knobCorner.Parent = knob
-        
-        local val = setting
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, 0, 1, 0)
-        btn.BackgroundTransparency = 1
-        btn.Text = ""
-        btn.Parent = row
-        
-        btn.MouseButton1Click:Connect(function()
-            val = not val
-            bg.BackgroundColor3 = val and colors.primary or Color3.fromRGB(40,40,50)
-            local goal = val and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
-            TweenService:Create(knob, TweenInfo.new(0.2), {Position = goal}):Play()
-            callback(val)
-            if text == "AIMBOT" and val == false then
-                if fovCircle then fovCircle.Visible = false end
-            elseif text == "AIMBOT" and val == true then
-                if fovCircle then fovCircle.Visible = not _G.Settings.hideFOV end
-            end
-            if text == "Hide FOV" then
-                if fovCircle then fovCircle.Visible = not val end
-            end
-        end)
-    end
-    
-    local function addButton(text, color, callback)
-        if not content then return end
-        order = order + 1
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, 0, 0, 42)
-        btn.BackgroundColor3 = color or colors.panel
-        btn.BackgroundTransparency = 0.3
-        btn.Text = text
-        btn.TextColor3 = colors.text
-        btn.TextSize = 12
-        btn.Font = Enum.Font.GothamBold
-        btn.LayoutOrder = order
-        btn.Parent = content
-        
-        local btnCorner = Instance.new("UICorner")
-        btnCorner.CornerRadius = UDim.new(0, 8)
-        btnCorner.Parent = btn
-        
-        btn.MouseButton1Click:Connect(callback)
-    end
-    
-    local function addSep(text)
-        if not content then return end
-        order = order + 1
-        local sep = Instance.new("TextLabel")
-        sep.Size = UDim2.new(1, 0, 0, 24)
-        sep.BackgroundTransparency = 1
-        sep.Text = "--- " .. text .. " ---"
-        sep.TextColor3 = colors.textDim
-        sep.TextSize = 10
-        sep.Font = Enum.Font.GothamSemibold
-        sep.TextXAlignment = Enum.TextXAlignment.Left
-        sep.LayoutOrder = order
-        sep.Parent = content
-    end
-    
-    local function switchToTab(name)
-        if not content then return end
-        clear()
-        if name == "ESP" then
-            addToggle("PLAYER ESP", _G.Settings.playerESP, function(v) _G.Settings.playerESP = v end)
-            addToggle("NAMETAG ESP", _G.Settings.nametagESP, function(v) _G.Settings.nametagESP = v end)
-            addToggle("XRAY", _G.Settings.xray, function(v) _G.Settings.xray = v end)
-            addToggle("GUN HIGHLIGHT", _G.Settings.highlightGun, function(v) _G.Settings.highlightGun = v end)
-            addSep("INNOCENT COLOR")
-            addButton("GREEN", nil, function() _G.Settings.espColor = "Green" end)
-            addButton("YELLOW", nil, function() _G.Settings.espColor = "Yellow" end)
-            addButton("RED", nil, function() _G.Settings.espColor = "Red" end)
-        elseif name == "AIM" then
-            addToggle("AIMBOT", _G.Settings.aimbot, function(v) _G.Settings.aimbot = v end)
-            addSep("TARGET")
-            addButton("MURDERER", colors.murderer, function() _G.Settings.aimTarget = "Murder" end)
-            addButton("SHERIFF", colors.sheriff, function() _G.Settings.aimTarget = "Sheriff" end)
-            addButton("INNOCENT", colors.innocent, function() _G.Settings.aimTarget = "Innocent" end)
-            addSep("FOV")
-            addButton("FOV 150", nil, function() _G.Settings.aimFOV = 150; if updateFOVCircle then updateFOVCircle() end end)
-            addButton("FOV 250", nil, function() _G.Settings.aimFOV = 250; if updateFOVCircle then updateFOVCircle() end end)
-            addButton("FOV 360", nil, function() _G.Settings.aimFOV = 360; if updateFOVCircle then updateFOVCircle() end end)
-            addToggle("AUTO SHOOT", _G.Settings.autoShoot, function(v) _G.Settings.autoShoot = v end)
-            addToggle("HIDE FOV", _G.Settings.hideFOV, function(v) _G.Settings.hideFOV = v; if updateFOVCircle then updateFOVCircle() end end)
-        elseif name == "MISC" then
-            addToggle("FLY (F KEY)", _G.Settings.fly, function(v) _G.Settings.fly = v end)
-            addToggle("ANTI AFK", _G.Settings.antiAFK, function(v) _G.Settings.antiAFK = v end)
-            addSep("VERSION")
-            local ver = Instance.new("TextLabel")
-            ver.Size = UDim2.new(1, 0, 0, 30)
-            ver.BackgroundTransparency = 1
-            ver.Text = "J.A.R.V.I.S V8.0"
-            ver.TextColor3 = colors.textDim
-            ver.TextSize = 11
-            ver.Font = Enum.Font.Gotham
-            ver.LayoutOrder = order + 1
-            order = order + 1
-            ver.Parent = content
-        end
-    end
-    
-    for name, data in pairs(tabBtns) do
-        if data.btn then
-            data.btn.MouseButton1Click:Connect(function()
-                for _, tb in pairs(tabBtns) do
-                    if tb.btn then tb.btn.TextColor3 = colors.textDim end
-                    if tb.line then tb.line.Visible = false end
-                end
-                if data.btn then data.btn.TextColor3 = colors.primary end
-                if data.line then data.line.Visible = true end
-                switchToTab(name)
-            end)
-        end
-    end
-    
-    if tabBtns["ESP"] and tabBtns["ESP"].btn then
-        tabBtns["ESP"].btn.MouseButton1Click:Fire()
-    end
-end
-
 local menuVisible = false
-local mainMenu = gui
-
 jarvisBtn.MouseButton1Click:Connect(function()
     menuVisible = not menuVisible
-    if mainMenu then mainMenu.Visible = menuVisible end
+    gui.Visible = menuVisible
     jarvisBtn.BackgroundColor3 = menuVisible and Color3.fromRGB(100, 255, 120) or Color3.fromRGB(80, 255, 100)
     task.wait(0.1)
     jarvisBtn.BackgroundColor3 = Color3.fromRGB(80, 255, 100)
@@ -1079,5 +758,95 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
-print("J.A.R.V.I.S: PART 3/3 LOADED - MENU COMPLETE")
+if tabBtns["ESP"] and tabBtns["ESP"].btn then
+    tabBtns["ESP"].btn.MouseButton1Click:Connect(function()
+        for _, tb in pairs(tabBtns) do
+            if tb.btn then tb.btn.TextColor3 = colors.textDim end
+            if tb.line then tb.line.Visible = false end
+        end
+        if tabBtns["ESP"].btn then tabBtns["ESP"].btn.TextColor3 = colors.primary end
+        if tabBtns["ESP"].line then tabBtns["ESP"].line.Visible = true end
+        clear()
+        addToggle("PLAYER ESP", _G.Settings.playerESP, function(v) _G.Settings.playerESP = v end)
+        addToggle("NAMETAG ESP", _G.Settings.nametagESP, function(v) _G.Settings.nametagESP = v end)
+        addToggle("XRAY", _G.Settings.xray, function(v) _G.Settings.xray = v end)
+        addToggle("GUN HIGHLIGHT", _G.Settings.highlightGun, function(v) _G.Settings.highlightGun = v end)
+        addSep("INNOCENT COLOR")
+        addButton("GREEN", nil, function() _G.Settings.espColor = "Green" end)
+        addButton("YELLOW", nil, function() _G.Settings.espColor = "Yellow" end)
+        addButton("RED", nil, function() _G.Settings.espColor = "Red" end)
+    end)
+    
+    if tabBtns["AIM"] and tabBtns["AIM"].btn then
+        tabBtns["AIM"].btn.MouseButton1Click:Connect(function()
+            for _, tb in pairs(tabBtns) do
+                if tb.btn then tb.btn.TextColor3 = colors.textDim end
+                if tb.line then tb.line.Visible = false end
+            end
+            if tabBtns["AIM"].btn then tabBtns["AIM"].btn.TextColor3 = colors.primary end
+            if tabBtns["AIM"].line then tabBtns["AIM"].line.Visible = true end
+            clear()
+            addToggle("AIMBOT", _G.Settings.aimbot, function(v) _G.Settings.aimbot = v end)
+            addSep("TARGET")
+            addButton("MURDERER", colors.murderer, function() _G.Settings.aimTarget = "Murder" end)
+            addButton("SHERIFF", colors.sheriff, function() _G.Settings.aimTarget = "Sheriff" end)
+            addButton("INNOCENT", colors.innocent, function() _G.Settings.aimTarget = "Innocent" end)
+            addSep("FOV")
+            addButton("FOV 150", nil, function() _G.Settings.aimFOV = 150; updateFOVCircle() end)
+            addButton("FOV 250", nil, function() _G.Settings.aimFOV = 250; updateFOVCircle() end)
+            addButton("FOV 360", nil, function() _G.Settings.aimFOV = 360; updateFOVCircle() end)
+            addToggle("AUTO SHOOT", _G.Settings.autoShoot, function(v) _G.Settings.autoShoot = v end)
+            addToggle("HIDE FOV", _G.Settings.hideFOV, function(v) _G.Settings.hideFOV = v; updateFOVCircle() end)
+        end)
+    end
+    
+    if tabBtns["MISC"] and tabBtns["MISC"].btn then
+        tabBtns["MISC"].btn.MouseButton1Click:Connect(function()
+            for _, tb in pairs(tabBtns) do
+                if tb.btn then tb.btn.TextColor3 = colors.textDim end
+                if tb.line then tb.line.Visible = false end
+            end
+            if tabBtns["MISC"].btn then tabBtns["MISC"].btn.TextColor3 = colors.primary end
+            if tabBtns["MISC"].line then tabBtns["MISC"].line.Visible = true end
+            clear()
+            addToggle("FLY (F KEY)", _G.Settings.fly, function(v) _G.Settings.fly = v end)
+            addToggle("ANTI AFK", _G.Settings.antiAFK, function(v) _G.Settings.antiAFK = v end)
+            addSep("VERSION")
+            local ver = Instance.new("TextLabel")
+            ver.Size = UDim2.new(1, 0, 0, 30)
+            ver.BackgroundTransparency = 1
+            ver.Text = "J.A.R.V.I.S V8.0"
+            ver.TextColor3 = colors.textDim
+            ver.TextSize = 11
+            ver.Font = Enum.Font.Gotham
+            ver.LayoutOrder = order + 1
+            order = order + 1
+            ver.Parent = content
+        end)
+    end
+    
+    if tabBtns["KILLER"] and tabBtns["KILLER"].btn then
+        for _, btn in pairs(content:GetChildren()) do
+            if btn:IsA("TextButton") then
+                if btn.Text == "KILL ALL" then
+                    btn.MouseButton1Click:Connect(killAll)
+                elseif btn.Text == "KILL SHERIFF" then
+                    btn.MouseButton1Click:Connect(killSheriff)
+                elseif btn.Text == "TELEPORT TO MURDERER" then
+                    btn.MouseButton1Click:Connect(teleportToMurderer)
+                elseif btn.Text == "TELEPORT TO SHERIFF" then
+                    btn.MouseButton1Click:Connect(teleportToSheriff)
+                elseif btn.Text == "TELEPORT TO GUN" then
+                    btn.MouseButton1Click:Connect(teleportToGun)
+                end
+            end
+        end
+    end
+    
+    if tabBtns["ESP"] and tabBtns["ESP"].btn then
+        tabBtns["ESP"].btn.MouseButton1Click:Fire()
+    end
+end
+
+print("J.A.R.V.I.S: PART 4/4 LOADED - MENU COMPLETE")
 print("Нажми на зелёную кнопку JARVIS для открытия меню")
