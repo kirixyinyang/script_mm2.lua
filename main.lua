@@ -1,7 +1,7 @@
 -- J.A.R.V.I.S | Main Loader for MM2
 -- Загрузка по шагам с визуальным эффектом
 
-local repo = "https://raw.githubusercontent.com/kirixyinyang/script_mm2.lua/main/"
+local repo = "https://raw.githubusercontent.com/kirixyinyang/script_mm2.lua/refs/heads/main/"
 
 local function showLoadingStep(text, step, total)
     local gui = Instance.new("ScreenGui")
