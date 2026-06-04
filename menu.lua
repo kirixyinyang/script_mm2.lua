@@ -850,3 +850,143 @@ end
 
 print("J.A.R.V.I.S: PART 4/4 LOADED - MENU COMPLETE")
 print("Нажми на зелёную кнопку JARVIS для открытия меню")
+-- ========== ПЛАВАЮЩАЯ КНОПКА JARVIS (ИСПРАВЛЕННАЯ) ==========
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local floatingGui = Instance.new("ScreenGui")
+floatingGui.Name = "JarvisButton"
+floatingGui.Parent = game:GetService("CoreGui")
+floatingGui.ResetOnSpawn = false
+
+local jarvisBtn = Instance.new("ImageButton")
+jarvisBtn.Size = UDim2.new(0, 65, 0, 65)
+jarvisBtn.Position = UDim2.new(0.85, 0, 0.82, 0)
+jarvisBtn.BackgroundColor3 = Color3.fromRGB(80, 255, 100)
+jarvisBtn.BackgroundTransparency = 0.15
+jarvisBtn.BorderSizePixel = 0
+jarvisBtn.Parent = floatingGui
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(1, 0)
+btnCorner.Parent = jarvisBtn
+
+local btnLabel = Instance.new("TextLabel")
+btnLabel.Size = UDim2.new(1, 0, 1, 0)
+btnLabel.BackgroundTransparency = 1
+btnLabel.Text = "JARVIS"
+btnLabel.TextSize = 11
+btnLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnLabel.Font = Enum.Font.GothamBold
+btnLabel.TextStrokeTransparency = 0
+btnLabel.TextStrokeColor3 = Color3.fromRGB(0, 100, 0)
+btnLabel.Parent = jarvisBtn
+
+local pulse = TweenService:Create(jarvisBtn, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true), {BackgroundTransparency = 0.05})
+pulse:Play()
+
+local menuGui = game:GetService("CoreGui"):FindFirstChild("JARVIS_Menu")
+
+if not menuGui then
+    menuGui = Instance.new("ScreenGui")
+    menuGui.Name = "JARVIS_Menu"
+    menuGui.Parent = game:GetService("CoreGui")
+    menuGui.ResetOnSpawn = false
+    menuGui.Visible = false
+    
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 340, 0, 450)
+    mainFrame.Position = UDim2.new(0.5, -170, 0.15, 0)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(5, 12, 7)
+    mainFrame.BackgroundTransparency = 0.1
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Parent = menuGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = mainFrame
+    
+    local title = Instance.new("Frame")
+    title.Size = UDim2.new(1, 0, 0, 45)
+    title.BackgroundColor3 = Color3.fromRGB(8, 18, 10)
+    title.BackgroundTransparency = 0.1
+    title.Parent = mainFrame
+    
+    local titleText = Instance.new("TextLabel")
+    titleText.Size = UDim2.new(1, 0, 1, 0)
+    titleText.BackgroundTransparency = 1
+    titleText.Text = "J.A.R.V.I.S  |  MM2"
+    titleText.TextColor3 = Color3.fromRGB(80, 255, 100)
+    titleText.TextSize = 18
+    titleText.Font = Enum.Font.GothamBold
+    titleText.Parent = title
+    
+    local close = Instance.new("TextButton")
+    close.Size = UDim2.new(0, 28, 0, 28)
+    close.Position = UDim2.new(1, -38, 0, 8)
+    close.BackgroundColor3 = Color3.fromRGB(50, 10, 10)
+    close.Text = "X"
+    close.TextColor3 = Color3.fromRGB(255, 80, 80)
+    close.TextSize = 14
+    close.Font = Enum.Font.GothamBold
+    close.Parent = title
+    close.MouseButton1Click:Connect(function() menuGui.Visible = false end)
+    
+    local sidebar = Instance.new("Frame")
+    sidebar.Size = UDim2.new(0, 100, 1, -45)
+    sidebar.Position = UDim2.new(0, 0, 0, 45)
+    sidebar.BackgroundColor3 = Color3.fromRGB(5, 14, 8)
+    sidebar.BorderSizePixel = 0
+    sidebar.Parent = mainFrame
+    
+    local content = Instance.new("TextLabel")
+    content.Size = UDim2.new(1, -110, 1, -55)
+    content.Position = UDim2.new(0, 105, 0, 50)
+    content.BackgroundTransparency = 1
+    content.Text = "Загрузка меню..."
+    content.TextColor3 = Color3.fromRGB(220, 255, 220)
+    content.TextSize = 14
+    content.Parent = mainFrame
+end
+
+local menuVisible = false
+
+jarvisBtn.MouseButton1Click:Connect(function()
+    menuVisible = not menuVisible
+    if menuGui then menuGui.Visible = menuVisible end
+    jarvisBtn.BackgroundColor3 = menuVisible and Color3.fromRGB(100, 255, 120) or Color3.fromRGB(80, 255, 100)
+    task.wait(0.1)
+    jarvisBtn.BackgroundColor3 = Color3.fromRGB(80, 255, 100)
+end)
+
+local dragActive = false
+local dragStartPos, btnStartPos
+local btnStartOffset = {X = 0, Y = 0}
+
+jarvisBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragActive = true
+        dragStartPos = input.Position
+        btnStartOffset.X = jarvisBtn.Position.X.Offset
+        btnStartOffset.Y = jarvisBtn.Position.Y.Offset
+        btnStartPos = jarvisBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragActive = false end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragActive and input.UserInputType == Enum.UserInputType.Touch then
+        local delta = input.Position - dragStartPos
+        jarvisBtn.Position = UDim2.new(
+            btnStartPos.X.Scale,
+            btnStartOffset.X + delta.X,
+            btnStartPos.Y.Scale,
+            btnStartOffset.Y + delta.Y
+        )
+    end
+end)
+
+print("J.A.R.V.I.S: КНОПКА ЗАГРУЖЕНА - нажми на зелёный круг")
