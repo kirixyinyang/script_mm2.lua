@@ -1,5 +1,4 @@
--- J.A.R.V.I.S | MM2 | PART 1/2
--- ESP + Aimbot + Fly + Anti-AFK
+-- J.A.R.V.I.S | MM2 | PART 1/3 V8.0
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -24,16 +23,10 @@ local colors = {
 }
 
 _G.Settings = {
-    playerESP = false, nametagESP = false, xray = false, highlightGun = false,
+    playerESP = true, nametagESP = false, xray = true, highlightGun = false,
     espColor = "Green", aimbot = false, aimTarget = "Murder", aimFOV = 250,
-    autoShoot = false, fly = false, antiAFK = false
+    autoShoot = false, fly = false, antiAFK = false, hideFOV = false
 }
-
-local function formatTime(s)
-    local m = math.floor((s % 3600) / 60)
-    local sec = math.floor(s % 60)
-    return string.format("%02d:%02d", m, sec)
-end
 
 function getRole(p)
     if not p then return "Innocent" end
@@ -53,7 +46,6 @@ local function getHRP(p)
     return nil
 end
 
--- ========== ESP ==========
 local espObjects = {}
 
 local function getESPColor(role)
@@ -113,14 +105,45 @@ task.spawn(function()
     end
 end)
 
--- ========== AIMBOT ==========
+local fovGui = Instance.new("ScreenGui")
+fovGui.Name = "FOVCircle"
+fovGui.Parent = game:GetService("CoreGui")
+fovGui.ResetOnSpawn = false
+
+local fovCircle = Instance.new("ImageLabel")
+fovCircle.Size = UDim2.new(0, _G.Settings.aimFOV * 2, 0, _G.Settings.aimFOV * 2)
+fovCircle.Position = UDim2.new(0.5, -_G.Settings.aimFOV, 0.5, -_G.Settings.aimFOV)
+fovCircle.BackgroundTransparency = 1
+fovCircle.Image = "rbxassetid://15097438680"
+fovCircle.ImageColor3 = colors.primary
+fovCircle.ImageTransparency = 0.5
+fovCircle.Visible = not _G.Settings.hideFOV
+fovCircle.Parent = fovGui
+
+local function updateFOVCircle()
+    fovCircle.Size = UDim2.new(0, _G.Settings.aimFOV * 2, 0, _G.Settings.aimFOV * 2)
+    fovCircle.Position = UDim2.new(0.5, -_G.Settings.aimFOV, 0.5, -_G.Settings.aimFOV)
+    fovCircle.Visible = not _G.Settings.hideFOV
+end
+
+local function isVisible(player)
+    if not player or not player.Character then return false end
+    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    local origin = Camera.CFrame.Position
+    local ray = Ray.new(origin, (hrp.Position - origin).Unit * (origin - hrp.Position).Magnitude)
+    local hit = workspace:FindPartOnRay(ray, LocalPlayer.Character)
+    if hit then return Players:GetPlayerFromCharacter(hit.Parent) == player end
+    return false
+end
+
 local function getAimTarget()
     local targetRole = _G.Settings.aimTarget
     local closestDist = _G.Settings.aimFOV
     local closestHRP = nil
     local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
+        if player ~= LocalPlayer and isVisible(player) then
             local role = getRole(player)
             local match = (targetRole == "Murder" and role == "Murder") or (targetRole == "Sheriff" and role == "Sheriff") or (targetRole == "Innocent" and role == "Innocent")
             if not match then continue end
@@ -154,7 +177,6 @@ task.spawn(function()
     end
 end)
 
--- ========== FLY ==========
 local flying = false
 local bodyVelocity = nil
 
@@ -169,6 +191,21 @@ local function startFly()
     bodyVelocity = Instance.new("BodyVelocity")
     bodyVelocity.MaxForce = Vector3.new(1,1,1) * 100000
     bodyVelocity.Parent = hrp
+    
+    task.spawn(function()
+        while flying do
+            local dir = Vector3.new()
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + Vector3.new(0,0,-1) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir + Vector3.new(0,0,1) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir + Vector3.new(-1,0,0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + Vector3.new(1,0,0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir + Vector3.new(0,-1,0) end
+            dir = (Camera.CFrame.RightVector * dir.X + Camera.CFrame.UpVector * dir.Y + Camera.CFrame.LookVector * dir.Z) * 50
+            if bodyVelocity then bodyVelocity.Velocity = dir end
+            task.wait()
+        end
+    end)
 end
 
 local function stopFly()
@@ -189,21 +226,6 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     end
 end)
 
-RunService.RenderStepped:Connect(function()
-    if flying then
-        local dir = Vector3.new()
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + Vector3.new(0,0,-1) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir + Vector3.new(0,0,1) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir + Vector3.new(-1,0,0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + Vector3.new(1,0,0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir + Vector3.new(0,-1,0) end
-        dir = (Camera.CFrame.RightVector * dir.X + Camera.CFrame.UpVector * dir.Y + Camera.CFrame.LookVector * dir.Z) * 50
-        if bodyVelocity then bodyVelocity.Velocity = dir end
-    end
-end)
-
--- ========== ANTI-AFK ==========
 local function startAntiAFK()
     pcall(function()
         local vu = game:GetService("VirtualUser")
@@ -213,8 +235,9 @@ local function startAntiAFK()
     end)
 end
 if _G.Settings.antiAFK then startAntiAFK() end
--- J.A.R.V.I.S | MM2 | PART 2/2
--- MENU + BUTTONS + SCROLLING
+
+print("J.A.R.V.I.S: PART 1/3 LOADED")
+-- J.A.R.V.I.S | MM2 | PART 2/3 V8.0
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -238,23 +261,6 @@ local colors = {
 }
 
 _G.Settings = _G.Settings or {}
-_G.Settings.playerESP = _G.Settings.playerESP or false
-_G.Settings.nametagESP = _G.Settings.nametagESP or false
-_G.Settings.xray = _G.Settings.xray or false
-_G.Settings.highlightGun = _G.Settings.highlightGun or false
-_G.Settings.espColor = _G.Settings.espColor or "Green"
-_G.Settings.aimbot = _G.Settings.aimbot or false
-_G.Settings.aimTarget = _G.Settings.aimTarget or "Murder"
-_G.Settings.aimFOV = _G.Settings.aimFOV or 250
-_G.Settings.autoShoot = _G.Settings.autoShoot or false
-_G.Settings.fly = _G.Settings.fly or false
-_G.Settings.antiAFK = _G.Settings.antiAFK or false
-
-local function formatTime(s)
-    local m = math.floor((s % 3600) / 60)
-    local sec = math.floor(s % 60)
-    return string.format("%02d:%02d", m, sec)
-end
 
 function getRole(p)
     if not p then return "Innocent" end
@@ -274,7 +280,11 @@ local function getHRP(p)
     return nil
 end
 
--- ========== ФУНКЦИИ ДЛЯ КНОПОК ==========
+local function formatTime(s)
+    local m = math.floor((s % 3600) / 60)
+    local sec = math.floor(s % 60)
+    return string.format("%02d:%02d", m, sec)
+end
 
 local function killAll()
     local knife = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife")
@@ -329,6 +339,26 @@ local function teleportToGun()
     return false
 end
 
+local autoShotDragging = false
+local autoShotDragStart, autoShotBtnStart
+
+local function autoShot()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and getRole(player) == "Murder" and isVisible(player) then
+            local hrp = getHRP(player)
+            if hrp then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, hrp.Position)
+                local gun = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Gun")
+                if gun and gun:IsA("Tool") then
+                    local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Shoot")
+                    if remote then remote:FireServer(hrp.Position) end
+                end
+            end
+            return
+        end
+    end
+end
+
 local function isVisible(player)
     if not player or not player.Character then return false end
     local hrp = player.Character:FindFirstChild("HumanoidRootPart")
@@ -340,21 +370,11 @@ local function isVisible(player)
     return false
 end
 
-local function shotButton()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and getRole(player) == "Murder" and isVisible(player) then
-            local hrp = getHRP(player)
-            if hrp then Camera.CFrame = CFrame.new(Camera.CFrame.Position, hrp.Position) end
-            return
-        end
-    end
-end
-
--- ========== МЕНЮ ==========
 local gui = Instance.new("ScreenGui")
 gui.Name = "JARVIS_Menu"
 gui.Parent = game:GetService("CoreGui")
 gui.ResetOnSpawn = false
+gui.Visible = false
 
 local main = Instance.new("Frame")
 main.Size = UDim2.new(0, 340, 0, 450)
@@ -363,7 +383,6 @@ main.BackgroundColor3 = colors.dark
 main.BackgroundTransparency = 0.1
 main.BorderSizePixel = 0
 main.Parent = gui
-main.Visible = true
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
@@ -419,7 +438,7 @@ close.Parent = title
 local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(1, 0)
 closeCorner.Parent = close
-close.MouseButton1Click:Connect(function() main.Visible = false end)
+close.MouseButton1Click:Connect(function() gui.Visible = false end)
 
 local sidebar = Instance.new("Frame")
 sidebar.Size = UDim2.new(0, 100, 1, -45)
@@ -514,6 +533,14 @@ local function addToggle(text, setting, callback)
         local goal = val and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
         TweenService:Create(knob, TweenInfo.new(0.2), {Position = goal}):Play()
         callback(val)
+        if text == "AIMBOT" and val == false then
+            fovCircle.Visible = false
+        elseif text == "AIMBOT" and val == true then
+            fovCircle.Visible = not _G.Settings.hideFOV
+        end
+        if text == "Hide FOV" then
+            fovCircle.Visible = not val
+        end
     end)
 end
 
@@ -672,12 +699,300 @@ for i, name in pairs(tabsList) do
             addButton("KILL ALL", colors.murderer, killAll)
             addButton("KILL SHERIFF", colors.murderer, killSheriff)
             addButton("TELEPORT TO MURDERER", colors.murderer, teleportToMurderer)
-            addButton("SHOT BUTTON", colors.murderer, shotButton)
             addSep("SHERIFF ACTIONS")
             addButton("TELEPORT TO SHERIFF", colors.sheriff, teleportToSheriff)
             addButton("TELEPORT TO GUN", colors.gun, teleportToGun)
-            
-        elseif name == "ESP" then
+        end
+    end)
+end
+
+print("J.A.R.V.I.S: PART 2/3 LOADED")
+-- J.A.R.V.I.S | MM2 | PART 3/3 V8.0
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local colors = {
+    primary = Color3.fromRGB(80, 255, 100),
+    dark = Color3.fromRGB(5, 12, 7),
+    panel = Color3.fromRGB(8, 18, 10),
+    text = Color3.fromRGB(220, 255, 220),
+    textDim = Color3.fromRGB(80, 140, 90),
+    murderer = Color3.fromRGB(255, 50, 50),
+    sheriff = Color3.fromRGB(50, 80, 255),
+    innocent = Color3.fromRGB(50, 255, 80),
+    gun = Color3.fromRGB(0, 150, 255),
+    danger = Color3.fromRGB(255, 30, 30),
+    warning = Color3.fromRGB(255, 200, 0)
+}
+
+_G.Settings = _G.Settings or {}
+
+function getRole(p)
+    if not p then return "Innocent" end
+    local function h(n)
+        if p.Character and p.Character:FindFirstChild(n) then return true end
+        local bp = p:FindFirstChild("Backpack")
+        if bp and bp:FindFirstChild(n) then return true end
+        return false
+    end
+    if h("Knife") then return "Murder" end
+    if h("Gun") then return "Sheriff" end
+    return "Innocent"
+end
+
+local autoShotDragging = false
+local autoShotDragStart, autoShotBtnStart
+
+local function autoShot()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and getRole(player) == "Murder" and isVisible(player) then
+            local hrp = getHRP(player)
+            if hrp then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, hrp.Position)
+                local gun = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Gun")
+                if gun and gun:IsA("Tool") then
+                    local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Shoot")
+                    if remote then remote:FireServer(hrp.Position) end
+                end
+            end
+            return
+        end
+    end
+end
+
+local autoShotGui = Instance.new("ScreenGui")
+autoShotGui.Name = "AutoShotButton"
+autoShotGui.Parent = game:GetService("CoreGui")
+autoShotGui.ResetOnSpawn = false
+
+local autoShotBtn = Instance.new("ImageButton")
+autoShotBtn.Size = UDim2.new(0, 55, 0, 55)
+autoShotBtn.Position = UDim2.new(0.75, 0, 0.75, 0)
+autoShotBtn.BackgroundColor3 = colors.sheriff
+autoShotBtn.BackgroundTransparency = 0.2
+autoShotBtn.Image = "rbxassetid://15097438680"
+autoShotBtn.Parent = autoShotGui
+
+local autoShotCorner = Instance.new("UICorner")
+autoShotCorner.CornerRadius = UDim.new(1, 0)
+autoShotCorner.Parent = autoShotBtn
+
+local autoShotLabel = Instance.new("TextLabel")
+autoShotLabel.Size = UDim2.new(1, 0, 1, 0)
+autoShotLabel.BackgroundTransparency = 1
+autoShotLabel.Text = "🔫"
+autoShotLabel.TextSize = 20
+autoShotLabel.TextColor3 = Color3.fromRGB(255,255,255)
+autoShotLabel.Font = Enum.Font.GothamBold
+autoShotLabel.Parent = autoShotBtn
+
+autoShotBtn.MouseButton1Click:Connect(autoShot)
+
+autoShotBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        autoShotDragging = true
+        autoShotDragStart = input.Position
+        autoShotBtnStart = autoShotBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then autoShotDragging = false end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if autoShotDragging and input.UserInputType == Enum.UserInputType.Touch then
+        local delta = input.Position - autoShotDragStart
+        autoShotBtn.Position = UDim2.new(
+            autoShotBtnStart.X.Scale,
+            autoShotBtnStart.X.Offset + delta.X,
+            autoShotBtnStart.Y.Scale,
+            autoShotBtnStart.Y.Offset + delta.Y
+        )
+    end
+end)
+
+local floatingGui = Instance.new("ScreenGui")
+floatingGui.Name = "JarvisButton"
+floatingGui.Parent = game:GetService("CoreGui")
+floatingGui.ResetOnSpawn = false
+
+local jarvisBtn = Instance.new("ImageButton")
+jarvisBtn.Size = UDim2.new(0, 65, 0, 65)
+jarvisBtn.Position = UDim2.new(0.85, 0, 0.85, 0)
+jarvisBtn.BackgroundColor3 = Color3.fromRGB(80, 255, 100)
+jarvisBtn.BackgroundTransparency = 0.15
+jarvisBtn.BorderSizePixel = 0
+jarvisBtn.Parent = floatingGui
+
+local jarvisCorner = Instance.new("UICorner")
+jarvisCorner.CornerRadius = UDim.new(1, 0)
+jarvisCorner.Parent = jarvisBtn
+
+local jarvisLabel = Instance.new("TextLabel")
+jarvisLabel.Size = UDim2.new(1, 0, 1, 0)
+jarvisLabel.BackgroundTransparency = 1
+jarvisLabel.Text = "JARVIS"
+jarvisLabel.TextSize = 11
+jarvisLabel.TextColor3 = Color3.fromRGB(255,255,255)
+jarvisLabel.Font = Enum.Font.GothamBold
+jarvisLabel.TextStrokeTransparency = 0
+jarvisLabel.TextStrokeColor3 = Color3.fromRGB(0,100,0)
+jarvisLabel.Parent = jarvisBtn
+
+local pulse = TweenService:Create(jarvisBtn, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true), {BackgroundTransparency = 0.05})
+pulse:Play()
+
+local gui = game:GetService("CoreGui"):FindFirstChild("JARVIS_Menu")
+local tabBtns = {}
+local current = nil
+local order = 0
+local content = nil
+local contentList = nil
+local fovCircle = nil
+local updateFOVCircle = nil
+
+if gui then
+    content = gui:FindFirstChild("MainFrame"):FindFirstChild("ContentFrame")
+    if content then
+        contentList = content:FindFirstChild("UIListLayout")
+    end
+    
+    local sidebar = gui:FindFirstChild("MainFrame"):FindFirstChild("Sidebar")
+    if sidebar then
+        for _, btn in pairs(sidebar:GetChildren()) do
+            if btn:IsA("TextButton") then
+                local name = btn.Text
+                if name == "ESP" or name == "AIM" or name == "MISC" then
+                    tabBtns[name] = {btn = btn, line = btn:FindFirstChildOfClass("Frame")}
+                end
+            end
+        end
+    end
+    
+    local function clear()
+        if not content then return end
+        for _, child in pairs(content:GetChildren()) do
+            if child:IsA("Frame") or child:IsA("TextButton") or child:IsA("TextLabel") then
+                if child ~= contentList then
+                    child:Destroy()
+                end
+            end
+        end
+    end
+    
+    local function addToggle(text, setting, callback)
+        if not content then return end
+        order = order + 1
+        local row = Instance.new("Frame")
+        row.Size = UDim2.new(1, 0, 0, 44)
+        row.BackgroundColor3 = colors.panel
+        row.BackgroundTransparency = 0.3
+        row.LayoutOrder = order
+        row.Parent = content
+        
+        local rowCorner = Instance.new("UICorner")
+        rowCorner.CornerRadius = UDim.new(0, 8)
+        rowCorner.Parent = row
+        
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(0.65, 0, 1, 0)
+        lbl.Position = UDim2.new(0, 12, 0, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = text
+        lbl.TextColor3 = colors.text
+        lbl.TextSize = 12
+        lbl.Font = Enum.Font.GothamSemibold
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.Parent = row
+        
+        local bg = Instance.new("Frame")
+        bg.Size = UDim2.new(0, 40, 0, 20)
+        bg.Position = UDim2.new(1, -50, 0.5, -10)
+        bg.BackgroundColor3 = setting and colors.primary or Color3.fromRGB(40,40,50)
+        bg.Parent = row
+        
+        local bgCorner = Instance.new("UICorner")
+        bgCorner.CornerRadius = UDim.new(1, 0)
+        bgCorner.Parent = bg
+        
+        local knob = Instance.new("Frame")
+        knob.Size = UDim2.new(0, 16, 0, 16)
+        knob.Position = setting and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
+        knob.BackgroundColor3 = Color3.fromRGB(255,255,255)
+        knob.Parent = bg
+        
+        local knobCorner = Instance.new("UICorner")
+        knobCorner.CornerRadius = UDim.new(1, 0)
+        knobCorner.Parent = knob
+        
+        local val = setting
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, 0, 1, 0)
+        btn.BackgroundTransparency = 1
+        btn.Text = ""
+        btn.Parent = row
+        
+        btn.MouseButton1Click:Connect(function()
+            val = not val
+            bg.BackgroundColor3 = val and colors.primary or Color3.fromRGB(40,40,50)
+            local goal = val and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
+            TweenService:Create(knob, TweenInfo.new(0.2), {Position = goal}):Play()
+            callback(val)
+            if text == "AIMBOT" and val == false then
+                if fovCircle then fovCircle.Visible = false end
+            elseif text == "AIMBOT" and val == true then
+                if fovCircle then fovCircle.Visible = not _G.Settings.hideFOV end
+            end
+            if text == "Hide FOV" then
+                if fovCircle then fovCircle.Visible = not val end
+            end
+        end)
+    end
+    
+    local function addButton(text, color, callback)
+        if not content then return end
+        order = order + 1
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, 0, 0, 42)
+        btn.BackgroundColor3 = color or colors.panel
+        btn.BackgroundTransparency = 0.3
+        btn.Text = text
+        btn.TextColor3 = colors.text
+        btn.TextSize = 12
+        btn.Font = Enum.Font.GothamBold
+        btn.LayoutOrder = order
+        btn.Parent = content
+        
+        local btnCorner = Instance.new("UICorner")
+        btnCorner.CornerRadius = UDim.new(0, 8)
+        btnCorner.Parent = btn
+        
+        btn.MouseButton1Click:Connect(callback)
+    end
+    
+    local function addSep(text)
+        if not content then return end
+        order = order + 1
+        local sep = Instance.new("TextLabel")
+        sep.Size = UDim2.new(1, 0, 0, 24)
+        sep.BackgroundTransparency = 1
+        sep.Text = "--- " .. text .. " ---"
+        sep.TextColor3 = colors.textDim
+        sep.TextSize = 10
+        sep.Font = Enum.Font.GothamSemibold
+        sep.TextXAlignment = Enum.TextXAlignment.Left
+        sep.LayoutOrder = order
+        sep.Parent = content
+    end
+    
+    local function switchToTab(name)
+        if not content then return end
+        clear()
+        if name == "ESP" then
             addToggle("PLAYER ESP", _G.Settings.playerESP, function(v) _G.Settings.playerESP = v end)
             addToggle("NAMETAG ESP", _G.Settings.nametagESP, function(v) _G.Settings.nametagESP = v end)
             addToggle("XRAY", _G.Settings.xray, function(v) _G.Settings.xray = v end)
@@ -686,7 +1001,6 @@ for i, name in pairs(tabsList) do
             addButton("GREEN", nil, function() _G.Settings.espColor = "Green" end)
             addButton("YELLOW", nil, function() _G.Settings.espColor = "Yellow" end)
             addButton("RED", nil, function() _G.Settings.espColor = "Red" end)
-            
         elseif name == "AIM" then
             addToggle("AIMBOT", _G.Settings.aimbot, function(v) _G.Settings.aimbot = v end)
             addSep("TARGET")
@@ -694,11 +1008,11 @@ for i, name in pairs(tabsList) do
             addButton("SHERIFF", colors.sheriff, function() _G.Settings.aimTarget = "Sheriff" end)
             addButton("INNOCENT", colors.innocent, function() _G.Settings.aimTarget = "Innocent" end)
             addSep("FOV")
-            addButton("FOV 150", nil, function() _G.Settings.aimFOV = 150 end)
-            addButton("FOV 250", nil, function() _G.Settings.aimFOV = 250 end)
-            addButton("FOV 360", nil, function() _G.Settings.aimFOV = 360 end)
+            addButton("FOV 150", nil, function() _G.Settings.aimFOV = 150; if updateFOVCircle then updateFOVCircle() end end)
+            addButton("FOV 250", nil, function() _G.Settings.aimFOV = 250; if updateFOVCircle then updateFOVCircle() end end)
+            addButton("FOV 360", nil, function() _G.Settings.aimFOV = 360; if updateFOVCircle then updateFOVCircle() end end)
             addToggle("AUTO SHOOT", _G.Settings.autoShoot, function(v) _G.Settings.autoShoot = v end)
-            
+            addToggle("HIDE FOV", _G.Settings.hideFOV, function(v) _G.Settings.hideFOV = v; if updateFOVCircle then updateFOVCircle() end end)
         elseif name == "MISC" then
             addToggle("FLY (F KEY)", _G.Settings.fly, function(v) _G.Settings.fly = v end)
             addToggle("ANTI AFK", _G.Settings.antiAFK, function(v) _G.Settings.antiAFK = v end)
@@ -706,7 +1020,7 @@ for i, name in pairs(tabsList) do
             local ver = Instance.new("TextLabel")
             ver.Size = UDim2.new(1, 0, 0, 30)
             ver.BackgroundTransparency = 1
-            ver.Text = "J.A.R.V.I.S V7.0"
+            ver.Text = "J.A.R.V.I.S V8.0"
             ver.TextColor3 = colors.textDim
             ver.TextSize = 11
             ver.Font = Enum.Font.Gotham
@@ -714,13 +1028,56 @@ for i, name in pairs(tabsList) do
             order = order + 1
             ver.Parent = content
         end
-    end)
+    end
+    
+    for name, data in pairs(tabBtns) do
+        if data.btn then
+            data.btn.MouseButton1Click:Connect(function()
+                for _, tb in pairs(tabBtns) do
+                    if tb.btn then tb.btn.TextColor3 = colors.textDim end
+                    if tb.line then tb.line.Visible = false end
+                end
+                if data.btn then data.btn.TextColor3 = colors.primary end
+                if data.line then data.line.Visible = true end
+                switchToTab(name)
+            end)
+        end
+    end
+    
+    if tabBtns["ESP"] and tabBtns["ESP"].btn then
+        tabBtns["ESP"].btn.MouseButton1Click:Fire()
+    end
 end
 
-task.wait(0.1)
-if tabBtns["INFO"] then
-    tabBtns["INFO"].btn.MouseButton1Click:Fire()
-end
+local menuVisible = false
+local mainMenu = gui
 
-print("J.A.R.V.I.S: PART 2/2 LOADED - MENU + FUNCTIONS")
-print("J.A.R.V.I.S: PART 1/2 LOADED - ESP + AIMBOT + FLY")
+jarvisBtn.MouseButton1Click:Connect(function()
+    menuVisible = not menuVisible
+    if mainMenu then mainMenu.Visible = menuVisible end
+    jarvisBtn.BackgroundColor3 = menuVisible and Color3.fromRGB(100, 255, 120) or Color3.fromRGB(80, 255, 100)
+    task.wait(0.1)
+    jarvisBtn.BackgroundColor3 = Color3.fromRGB(80, 255, 100)
+end)
+
+local dragActive = false
+local dragStartPos, btnStartPos
+jarvisBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragActive = true
+        dragStartPos = input.Position
+        btnStartPos = jarvisBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragActive = false end
+        end)
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragActive and input.UserInputType == Enum.UserInputType.Touch then
+        local delta = input.Position - dragStartPos
+        jarvisBtn.Position = UDim2.new(btnStartPos.X.Scale, btnStartPos.X.Offset + delta.X, btnStartPos.Y.Scale, btnStartPos.Y.Offset + delta.Y)
+    end
+end)
+
+print("J.A.R.V.I.S: PART 3/3 LOADED - MENU COMPLETE")
+print("Нажми на зелёную кнопку JARVIS для открытия меню")
