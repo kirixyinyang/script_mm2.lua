@@ -1,6 +1,3 @@
--- J.A.R.V.I.S | Main Loader for MM2
--- Загрузка по шагам с визуальным эффектом
-
 local repo = "https://raw.githubusercontent.com/kirixyinyang/script_mm2.lua/refs/heads/main/"
 
 local function showLoadingStep(text, step, total)
@@ -8,7 +5,7 @@ local function showLoadingStep(text, step, total)
     gui.Name = "JARVIS_Loading"
     gui.Parent = game:GetService("CoreGui")
     gui.ResetOnSpawn = false
-    
+
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(0, 300, 0, 80)
     frame.Position = UDim2.new(0.5, -150, 0.5, -40)
@@ -16,11 +13,11 @@ local function showLoadingStep(text, step, total)
     frame.BackgroundTransparency = 0.1
     frame.BorderSizePixel = 0
     frame.Parent = gui
-    
+
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = frame
-    
+
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 30)
     title.Position = UDim2.new(0, 0, 0, 10)
@@ -30,7 +27,7 @@ local function showLoadingStep(text, step, total)
     title.TextSize = 16
     title.Font = Enum.Font.GothamBold
     title.Parent = frame
-    
+
     local stepText = Instance.new("TextLabel")
     stepText.Size = UDim2.new(1, 0, 0, 25)
     stepText.Position = UDim2.new(0, 0, 0, 40)
@@ -40,7 +37,7 @@ local function showLoadingStep(text, step, total)
     stepText.TextSize = 12
     stepText.Font = Enum.Font.Gotham
     stepText.Parent = frame
-    
+
     local barBg = Instance.new("Frame")
     barBg.Size = UDim2.new(0.9, 0, 0, 4)
     barBg.Position = UDim2.new(0.05, 0, 0, 68)
@@ -50,7 +47,7 @@ local function showLoadingStep(text, step, total)
     local barBgCorner = Instance.new("UICorner")
     barBgCorner.CornerRadius = UDim.new(1, 0)
     barBgCorner.Parent = barBg
-    
+
     local bar = Instance.new("Frame")
     bar.Size = UDim2.new((step-1)/total, 0, 1, 0)
     bar.BackgroundColor3 = Color3.fromRGB(80, 255, 100)
@@ -59,22 +56,28 @@ local function showLoadingStep(text, step, total)
     local barCorner = Instance.new("UICorner")
     barCorner.CornerRadius = UDim.new(1, 0)
     barCorner.Parent = bar
-    
+
+    local TweenService = game:GetService("TweenService")
     local pulse = TweenService:Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true), 
         {BackgroundTransparency = 0.05})
     pulse:Play()
-    
+
     return gui, bar
 end
 
 local function updateLoadingBar(bar, step, total)
     if bar then
         local size = (step) / total
+        local TweenService = game:GetService("TweenService")
         TweenService:Create(bar, TweenInfo.new(0.2), {Size = UDim2.new(size, 0, 1, 0)}):Play()
     end
 end
 
-local function loadModule(name, bar, step, total, gui)
+local loadingGui, loadingBar = showLoadingStep("Initializing...", 1, 4)
+task.wait(1)
+
+-- Исправленная загрузка: модули загружаются и выполняются без лишних аргументов
+local function loadAndRunModule(name, barStep)
     local url = repo .. name
     local success, content = pcall(function()
         return game:HttpGet(url)
@@ -82,35 +85,27 @@ local function loadModule(name, bar, step, total, gui)
     if success then
         local func, err = loadstring(content)
         if func then
-            updateLoadingBar(bar, step, total)
-            return func
+            updateLoadingBar(loadingBar, barStep, 4)
+            func() -- <-- ВЫЗЫВАЕМ БЕЗ АРГУМЕНТОВ
+            return true
         else
             warn("Error in " .. name .. ": " .. err)
-            return nil
+            return false
         end
     else
         warn("Failed load " .. name .. ": " .. content)
-        return nil
+        return false
     end
 end
 
-local TweenService = game:GetService("TweenService")
-
-local loadingGui, loadingBar = showLoadingStep("Initializing...", 1, 4)
-task.wait(1)
-
-local espFunc = loadModule("esp.lua", loadingBar, 2, 4, loadingGui)
+loadAndRunModule("esp.lua", 2)
 task.wait(0.5)
 
-local menuFunc = loadModule("menu.lua", loadingBar, 3, 4, loadingGui)
+loadAndRunModule("menu.lua", 3)
 task.wait(0.5)
 
-local utilsFunc = loadModule("utils.lua", loadingBar, 4, 4, loadingGui)
+loadAndRunModule("utils.lua", 4)
 task.wait(0.8)
-
-if espFunc then espFunc() end
-if menuFunc then menuFunc() end
-if utilsFunc then utilsFunc() end
 
 if loadingGui then loadingGui:Destroy() end
 
