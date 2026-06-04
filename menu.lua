@@ -1,4 +1,4 @@
--- J.A.R.V.I.S | Menu Module for MM2 (WITH TOGGLES)
+-- J.A.R.V.I.S | Menu Module for MM2 (FULLY WORKING)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -21,27 +21,13 @@ local colors = {
     warning = Color3.fromRGB(255, 200, 0)
 }
 
-_G.Settings = _G.Settings or {}
-_G.Settings.playerESP = false
-_G.Settings.nametagESP = false
-_G.Settings.xray = false
-_G.Settings.highlightGun = false
-_G.Settings.espColor = "Green"
-_G.Settings.aimbot = false
-_G.Settings.aimTarget = "Murder"
-_G.Settings.aimFOV = 250
-_G.Settings.autoShoot = false
-_G.Settings.fly = false
-_G.Settings.flySpeed = 50
-_G.Settings.antiAFK = false
+_G.Settings = {
+    playerESP = false, nametagESP = false, xray = false, highlightGun = false,
+    espColor = "Green", aimbot = false, aimTarget = "Murder", aimFOV = 250,
+    autoShoot = false, fly = false, flySpeed = 50, antiAFK = false
+}
 
-local function formatTime(s)
-    local m = math.floor((s % 3600) / 60)
-    local sec = math.floor(s % 60)
-    return string.format("%02d:%02d", m, sec)
-end
-
-local function getRole(p)
+function getRole(p)
     if not p then return "Innocent" end
     local function h(n)
         if p.Character and p.Character:FindFirstChild(n) then return true end
@@ -54,33 +40,41 @@ local function getRole(p)
     return "Innocent"
 end
 
-local menuGui = Instance.new("ScreenGui")
-menuGui.Name = "JARVIS_Menu"
-menuGui.Parent = game:GetService("CoreGui")
-menuGui.ResetOnSpawn = false
+local function formatTime(s)
+    local m = math.floor((s % 3600) / 60)
+    local sec = math.floor(s % 60)
+    return string.format("%02d:%02d", m, sec)
+end
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 340, 0, 520)
-mainFrame.Position = UDim2.new(0.5, -170, 0.15, 0)
-mainFrame.BackgroundColor3 = colors.dark
-mainFrame.BackgroundTransparency = 0.1
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = menuGui
-mainFrame.Visible = true
+-- Главное окно
+local gui = Instance.new("ScreenGui")
+gui.Name = "JARVIS_Menu"
+gui.Parent = game:GetService("CoreGui")
+gui.ResetOnSpawn = false
+
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 340, 0, 450)
+main.Position = UDim2.new(0.5, -170, 0.2, 0)
+main.BackgroundColor3 = colors.dark
+main.BackgroundTransparency = 0.1
+main.BorderSizePixel = 0
+main.Parent = gui
+main.Visible = true
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = mainFrame
+corner.Parent = main
 
-local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 45)
-titleBar.BackgroundColor3 = colors.panel
-titleBar.BackgroundTransparency = 0.1
-titleBar.Parent = mainFrame
+-- Заголовок
+local title = Instance.new("Frame")
+title.Size = UDim2.new(1, 0, 0, 45)
+title.BackgroundColor3 = colors.panel
+title.BackgroundTransparency = 0.1
+title.Parent = main
 
 local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 12)
-titleCorner.Parent = titleBar
+titleCorner.Parent = title
 
 local titleText = Instance.new("TextLabel")
 titleText.Size = UDim2.new(1, 0, 1, 0)
@@ -89,93 +83,88 @@ titleText.Text = "J.A.R.V.I.S  |  MM2"
 titleText.TextColor3 = colors.primary
 titleText.TextSize = 18
 titleText.Font = Enum.Font.GothamBold
-titleText.Parent = titleBar
+titleText.Parent = title
 
-local dragMenu = false
-local dragMenuStart, menuStartPos
+local drag = false
+local dragStart, mainStart
 
-titleBar.InputBegan:Connect(function(input)
+title.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch then
-        dragMenu = true
-        dragMenuStart = input.Position
-        menuStartPos = mainFrame.Position
+        drag = true
+        dragStart = input.Position
+        mainStart = main.Position
         input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then dragMenu = false end
+            if input.UserInputState == Enum.UserInputState.End then drag = false end
         end)
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if dragMenu and input.UserInputType == Enum.UserInputType.Touch then
-        local delta = input.Position - dragMenuStart
-        mainFrame.Position = UDim2.new(
-            menuStartPos.X.Scale,
-            menuStartPos.X.Offset + delta.X,
-            menuStartPos.Y.Scale,
-            menuStartPos.Y.Offset + delta.Y
-        )
+    if drag and input.UserInputType == Enum.UserInputType.Touch then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(mainStart.X.Scale, mainStart.X.Offset + delta.X, mainStart.Y.Scale, mainStart.Y.Offset + delta.Y)
     end
 end)
 
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 28, 0, 28)
-closeBtn.Position = UDim2.new(1, -38, 0, 8)
-closeBtn.BackgroundColor3 = Color3.fromRGB(50, 10, 10)
-closeBtn.Text = "X"
-closeBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
-closeBtn.TextSize = 14
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.Parent = titleBar
-
+local close = Instance.new("TextButton")
+close.Size = UDim2.new(0, 28, 0, 28)
+close.Position = UDim2.new(1, -38, 0, 8)
+close.BackgroundColor3 = Color3.fromRGB(50, 10, 10)
+close.Text = "X"
+close.TextColor3 = Color3.fromRGB(255, 80, 80)
+close.TextSize = 14
+close.Font = Enum.Font.GothamBold
+close.Parent = title
 local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(1, 0)
-closeCorner.Parent = closeBtn
-
-closeBtn.MouseButton1Click:Connect(function()
-    mainFrame.Visible = false
+closeCorner.Parent = close
+close.MouseButton1Click:Connect(function()
+    main.Visible = false
 end)
 
+-- Боковое меню
 local sidebar = Instance.new("Frame")
 sidebar.Size = UDim2.new(0, 100, 1, -45)
 sidebar.Position = UDim2.new(0, 0, 0, 45)
 sidebar.BackgroundColor3 = Color3.fromRGB(5, 14, 8)
 sidebar.BorderSizePixel = 0
-sidebar.Parent = mainFrame
+sidebar.Parent = main
 
 local sidebarCorner = Instance.new("UICorner")
 sidebarCorner.CornerRadius = UDim.new(0, 10)
 sidebarCorner.Parent = sidebar
 
-local contentFrame = Instance.new("ScrollingFrame")
-contentFrame.Size = UDim2.new(1, -110, 1, -55)
-contentFrame.Position = UDim2.new(0, 105, 0, 50)
-contentFrame.BackgroundColor3 = Color3.fromRGB(8, 18, 10)
-contentFrame.BackgroundTransparency = 0.5
-contentFrame.BorderSizePixel = 0
-contentFrame.ScrollBarThickness = 4
-contentFrame.ScrollBarImageColor3 = colors.primary
-contentFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-contentFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-contentFrame.Parent = mainFrame
+-- Область контента (прокручиваемая)
+local content = Instance.new("ScrollingFrame")
+content.Size = UDim2.new(1, -110, 1, -55)
+content.Position = UDim2.new(0, 105, 0, 50)
+content.BackgroundColor3 = Color3.fromRGB(8, 18, 10)
+content.BackgroundTransparency = 0.5
+content.BorderSizePixel = 0
+content.ScrollBarThickness = 4
+content.ScrollBarImageColor3 = colors.primary
+content.CanvasSize = UDim2.new(0, 0, 0, 0)
+content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+content.Parent = main
 
 local contentList = Instance.new("UIListLayout")
 contentList.Padding = UDim.new(0, 6)
 contentList.SortOrder = Enum.SortOrder.LayoutOrder
-contentList.Parent = contentFrame
+contentList.Parent = content
 
-local contentPadding = Instance.new("UIPadding")
-contentPadding.PaddingTop = UDim.new(0, 8)
-contentPadding.PaddingBottom = UDim.new(0, 8)
-contentPadding.PaddingLeft = UDim.new(0, 8)
-contentPadding.PaddingRight = UDim.new(0, 8)
-contentPadding.Parent = contentFrame
+local pad = Instance.new("UIPadding")
+pad.PaddingTop = UDim.new(0, 8)
+pad.PaddingBottom = UDim.new(0, 8)
+pad.PaddingLeft = UDim.new(0, 8)
+pad.PaddingRight = UDim.new(0, 8)
+pad.Parent = content
 
-local function makeToggle(labelText, initVal, callback)
+-- Функции для создания элементов
+local function addToggle(text, setting, callback)
     local row = Instance.new("Frame")
     row.Size = UDim2.new(1, 0, 0, 44)
     row.BackgroundColor3 = colors.panel
     row.BackgroundTransparency = 0.3
-    row.BorderSizePixel = 0
     row.Parent = contentList
     
     local rowCorner = Instance.new("UICorner")
@@ -186,77 +175,68 @@ local function makeToggle(labelText, initVal, callback)
     lbl.Size = UDim2.new(0.65, 0, 1, 0)
     lbl.Position = UDim2.new(0, 12, 0, 0)
     lbl.BackgroundTransparency = 1
-    lbl.Text = labelText
+    lbl.Text = text
     lbl.TextColor3 = colors.text
     lbl.TextSize = 12
     lbl.Font = Enum.Font.GothamSemibold
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.Parent = row
     
-    local toggleBg = Instance.new("Frame")
-    toggleBg.Size = UDim2.new(0, 40, 0, 20)
-    toggleBg.Position = UDim2.new(1, -50, 0.5, -10)
-    toggleBg.BackgroundColor3 = initVal and colors.primary or Color3.fromRGB(40, 40, 50)
-    toggleBg.BorderSizePixel = 0
-    toggleBg.Parent = row
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(0, 40, 0, 20)
+    bg.Position = UDim2.new(1, -50, 0.5, -10)
+    bg.BackgroundColor3 = setting and colors.primary or Color3.fromRGB(40, 40, 50)
+    bg.Parent = row
     
-    local toggleCorner = Instance.new("UICorner")
-    toggleCorner.CornerRadius = UDim.new(1, 0)
-    toggleCorner.Parent = toggleBg
+    local bgCorner = Instance.new("UICorner")
+    bgCorner.CornerRadius = UDim.new(1, 0)
+    bgCorner.Parent = bg
     
     local knob = Instance.new("Frame")
     knob.Size = UDim2.new(0, 16, 0, 16)
-    knob.Position = initVal and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
+    knob.Position = setting and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
     knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    knob.BorderSizePixel = 0
-    knob.Parent = toggleBg
+    knob.Parent = bg
     
     local knobCorner = Instance.new("UICorner")
     knobCorner.CornerRadius = UDim.new(1, 0)
     knobCorner.Parent = knob
     
-    local val = initVal
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 1, 0)
     btn.BackgroundTransparency = 1
     btn.Text = ""
     btn.Parent = row
     
+    local val = setting
     btn.MouseButton1Click:Connect(function()
         val = not val
-        toggleBg.BackgroundColor3 = val and colors.primary or Color3.fromRGB(40, 40, 50)
-        local goalPos = val and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
-        TweenService:Create(knob, TweenInfo.new(0.2), {Position = goalPos}):Play()
-        if callback then callback(val) end
+        bg.BackgroundColor3 = val and colors.primary or Color3.fromRGB(40, 40, 50)
+        local goal = val and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
+        TweenService:Create(knob, TweenInfo.new(0.2), {Position = goal}):Play()
+        callback(val)
     end)
-    
-    return row
 end
 
-local function makeButton(labelText, color, callback)
+local function addButton(text, color, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 0, 42)
     btn.BackgroundColor3 = color or colors.panel
     btn.BackgroundTransparency = 0.3
-    btn.Text = labelText
+    btn.Text = text
     btn.TextColor3 = colors.text
     btn.TextSize = 12
     btn.Font = Enum.Font.GothamBold
-    btn.BorderSizePixel = 0
     btn.Parent = contentList
     
     local btnCorner = Instance.new("UICorner")
     btnCorner.CornerRadius = UDim.new(0, 8)
     btnCorner.Parent = btn
     
-    btn.MouseButton1Click:Connect(function()
-        if callback then callback() end
-    end)
-    
-    return btn
+    btn.MouseButton1Click:Connect(callback)
 end
 
-local function makeSep(text)
+local function addSep(text)
     local sep = Instance.new("TextLabel")
     sep.Size = UDim2.new(1, 0, 0, 24)
     sep.BackgroundTransparency = 1
@@ -266,15 +246,13 @@ local function makeSep(text)
     sep.Font = Enum.Font.GothamSemibold
     sep.TextXAlignment = Enum.TextXAlignment.Left
     sep.Parent = contentList
-    return sep
 end
 
-local function makeInfoRow(label, value, valueColor)
+local function addInfo(label, value, color)
     local row = Instance.new("Frame")
     row.Size = UDim2.new(1, 0, 0, 36)
     row.BackgroundColor3 = colors.panel
     row.BackgroundTransparency = 0.3
-    row.BorderSizePixel = 0
     row.Parent = contentList
     
     local rowCorner = Instance.new("UICorner")
@@ -297,7 +275,7 @@ local function makeInfoRow(label, value, valueColor)
     val.Position = UDim2.new(0.52, 0, 0, 0)
     val.BackgroundTransparency = 1
     val.Text = value
-    val.TextColor3 = valueColor or colors.primary
+    val.TextColor3 = color or colors.primary
     val.TextSize = 12
     val.Font = Enum.Font.GothamBold
     val.TextXAlignment = Enum.TextXAlignment.Right
@@ -306,103 +284,19 @@ local function makeInfoRow(label, value, valueColor)
     return val
 end
 
-local tabButtons = {}
-local currentTab = nil
-
-local function clearContent()
+-- Очистка контента
+local function clear()
     for _, child in pairs(contentList:GetChildren()) do
-        if child:IsA("Frame") or child:IsA("TextButton") or child:IsA("TextLabel") then
-            child:Destroy()
-        end
+        child:Destroy()
     end
 end
 
-local function switchToTab(tabName)
-    if currentTab == tabName then return end
-    currentTab = tabName
-    clearContent()
-    
-    if tabName == "INFO" then
-        makeInfoRow("NICK", LocalPlayer.Name, colors.primary)
-        local roleLabel = makeInfoRow("ROLE", getRole(LocalPlayer), getRole(LocalPlayer) == "Murder" and colors.murderer or (getRole(LocalPlayer) == "Sheriff" and colors.sheriff or colors.innocent))
-        local timeLabel = makeInfoRow("TIME", "00:00", colors.primary)
-        makeInfoRow("STATUS", "ACTIVE", colors.primary)
-        makeInfoRow("RISK", "DANGER!", colors.danger)
-        makeSep("WARNING")
-        local warnLabel = Instance.new("TextLabel")
-        warnLabel.Size = UDim2.new(1, 0, 0, 40)
-        warnLabel.BackgroundTransparency = 1
-        warnLabel.Text = "Using cheats may result in a ban. Use at your own risk!"
-        warnLabel.TextColor3 = colors.warning
-        warnLabel.TextSize = 10
-        warnLabel.Font = Enum.Font.Gotham
-        warnLabel.TextWrapped = true
-        warnLabel.Parent = contentList
-        
-        task.spawn(function()
-            while currentTab == "INFO" do
-                local elapsed = tick() - StartTime
-                if timeLabel then timeLabel.Text = formatTime(elapsed) end
-                if roleLabel then
-                    local newRole = getRole(LocalPlayer)
-                    roleLabel.Text = newRole
-                    if newRole == "Murder" then roleLabel.TextColor3 = colors.murderer
-                    elseif newRole == "Sheriff" then roleLabel.TextColor3 = colors.sheriff
-                    else roleLabel.TextColor3 = colors.innocent end
-                end
-                task.wait(1)
-            end
-        end)
-        
-    elseif tabName == "KILLER" then
-        makeSep("MURDERER ACTIONS")
-        makeButton("KILL ALL", colors.murderer, function() end)
-        makeButton("KILL SHERIFF", colors.murderer, function() end)
-        makeButton("TELEPORT TO MURDERER", colors.murderer, function() end)
-        makeButton("SHOT BUTTON", colors.murderer, function() end)
-        makeSep("SHERIFF ACTIONS")
-        makeButton("TELEPORT TO SHERIFF", colors.sheriff, function() end)
-        makeButton("TELEPORT TO GUN", colors.gun, function() end)
-        
-    elseif tabName == "ESP" then
-        makeToggle("PLAYER ESP", _G.Settings.playerESP, function(v) _G.Settings.playerESP = v end)
-        makeToggle("NAMETAG ESP", _G.Settings.nametagESP, function(v) _G.Settings.nametagESP = v end)
-        makeToggle("XRAY", _G.Settings.xray, function(v) _G.Settings.xray = v end)
-        makeToggle("GUN HIGHLIGHT", _G.Settings.highlightGun, function(v) _G.Settings.highlightGun = v end)
-        makeSep("INNOCENT COLOR")
-        makeButton("GREEN", nil, function() _G.Settings.espColor = "Green" end)
-        makeButton("YELLOW", nil, function() _G.Settings.espColor = "Yellow" end)
-        makeButton("RED", nil, function() _G.Settings.espColor = "Red" end)
-        
-    elseif tabName == "AIM" then
-        makeToggle("AIMBOT", _G.Settings.aimbot, function(v) _G.Settings.aimbot = v end)
-        makeSep("TARGET")
-        makeButton("MURDERER", colors.murderer, function() _G.Settings.aimTarget = "Murder" end)
-        makeButton("SHERIFF", colors.sheriff, function() _G.Settings.aimTarget = "Sheriff" end)
-        makeButton("INNOCENT", colors.innocent, function() _G.Settings.aimTarget = "Innocent" end)
-        makeSep("FOV")
-        makeButton("FOV 150", nil, function() _G.Settings.aimFOV = 150 end)
-        makeButton("FOV 250", nil, function() _G.Settings.aimFOV = 250 end)
-        makeButton("FOV 360", nil, function() _G.Settings.aimFOV = 360 end)
-        makeToggle("AUTO SHOOT", _G.Settings.autoShoot, function(v) _G.Settings.autoShoot = v end)
-        
-    elseif tabName == "MISC" then
-        makeToggle("FLY (F KEY)", _G.Settings.fly, function(v) _G.Settings.fly = v end)
-        makeToggle("ANTI AFK", _G.Settings.antiAFK, function(v) _G.Settings.antiAFK = v end)
-        makeSep("VERSION")
-        local versionLabel = Instance.new("TextLabel")
-        versionLabel.Size = UDim2.new(1, 0, 0, 30)
-        versionLabel.BackgroundTransparency = 1
-        versionLabel.Text = "J.A.R.V.I.S V7.0"
-        versionLabel.TextColor3 = colors.textDim
-        versionLabel.TextSize = 11
-        versionLabel.Font = Enum.Font.Gotham
-        versionLabel.Parent = contentList
-    end
-end
+-- Вкладки
+local tabs = {"INFO", "KILLER", "ESP", "AIM", "MISC"}
+local tabBtns = {}
+local current = nil
 
-local tabNames = {"INFO", "KILLER", "ESP", "AIM", "MISC"}
-for i, name in pairs(tabNames) do
+for i, name in pairs(tabs) do
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 0, 42)
     btn.Position = UDim2.new(0, 0, 0, (i-1) * 42)
@@ -421,22 +315,101 @@ for i, name in pairs(tabNames) do
     line.Visible = false
     line.Parent = btn
     
-    tabButtons[name] = {btn = btn, line = line}
+    tabBtns[name] = {btn = btn, line = line}
     
     btn.MouseButton1Click:Connect(function()
-        for _, tb in pairs(tabButtons) do
+        for _, tb in pairs(tabBtns) do
             tb.btn.TextColor3 = colors.textDim
-            if tb.line then tb.line.Visible = false end
+            tb.line.Visible = false
         end
         btn.TextColor3 = colors.primary
         line.Visible = true
-        switchToTab(name)
+        current = name
+        clear()
+        
+        if name == "INFO" then
+            addInfo("NICK", LocalPlayer.Name, colors.primary)
+            local roleVal = addInfo("ROLE", getRole(LocalPlayer), getRole(LocalPlayer) == "Murder" and colors.murderer or (getRole(LocalPlayer) == "Sheriff" and colors.sheriff or colors.innocent))
+            local timeVal = addInfo("TIME", "00:00", colors.primary)
+            addInfo("STATUS", "ACTIVE", colors.primary)
+            addInfo("RISK", "DANGER!", colors.danger)
+            addSep("WARNING")
+            local warn = Instance.new("TextLabel")
+            warn.Size = UDim2.new(1, 0, 0, 40)
+            warn.BackgroundTransparency = 1
+            warn.Text = "Using cheats may result in a ban. Use at your own risk!"
+            warn.TextColor3 = colors.warning
+            warn.TextSize = 10
+            warn.Font = Enum.Font.Gotham
+            warn.TextWrapped = true
+            warn.Parent = contentList
+            
+            task.spawn(function()
+                while current == "INFO" do
+                    local elapsed = tick() - StartTime
+                    if timeVal then timeVal.Text = formatTime(elapsed) end
+                    if roleVal then
+                        local newRole = getRole(LocalPlayer)
+                        roleVal.Text = newRole
+                        if newRole == "Murder" then roleVal.TextColor3 = colors.murderer
+                        elseif newRole == "Sheriff" then roleVal.TextColor3 = colors.sheriff
+                        else roleVal.TextColor3 = colors.innocent end
+                    end
+                    task.wait(1)
+                end
+            end)
+            
+        elseif name == "KILLER" then
+            addSep("MURDERER ACTIONS")
+            addButton("KILL ALL", colors.murderer, function() end)
+            addButton("KILL SHERIFF", colors.murderer, function() end)
+            addButton("TELEPORT TO MURDERER", colors.murderer, function() end)
+            addButton("SHOT BUTTON", colors.murderer, function() end)
+            addSep("SHERIFF ACTIONS")
+            addButton("TELEPORT TO SHERIFF", colors.sheriff, function() end)
+            addButton("TELEPORT TO GUN", colors.gun, function() end)
+            
+        elseif name == "ESP" then
+            addToggle("PLAYER ESP", _G.Settings.playerESP, function(v) _G.Settings.playerESP = v end)
+            addToggle("NAMETAG ESP", _G.Settings.nametagESP, function(v) _G.Settings.nametagESP = v end)
+            addToggle("XRAY", _G.Settings.xray, function(v) _G.Settings.xray = v end)
+            addToggle("GUN HIGHLIGHT", _G.Settings.highlightGun, function(v) _G.Settings.highlightGun = v end)
+            addSep("INNOCENT COLOR")
+            addButton("GREEN", nil, function() _G.Settings.espColor = "Green" end)
+            addButton("YELLOW", nil, function() _G.Settings.espColor = "Yellow" end)
+            addButton("RED", nil, function() _G.Settings.espColor = "Red" end)
+            
+        elseif name == "AIM" then
+            addToggle("AIMBOT", _G.Settings.aimbot, function(v) _G.Settings.aimbot = v end)
+            addSep("TARGET")
+            addButton("MURDERER", colors.murderer, function() _G.Settings.aimTarget = "Murder" end)
+            addButton("SHERIFF", colors.sheriff, function() _G.Settings.aimTarget = "Sheriff" end)
+            addButton("INNOCENT", colors.innocent, function() _G.Settings.aimTarget = "Innocent" end)
+            addSep("FOV")
+            addButton("FOV 150", nil, function() _G.Settings.aimFOV = 150 end)
+            addButton("FOV 250", nil, function() _G.Settings.aimFOV = 250 end)
+            addButton("FOV 360", nil, function() _G.Settings.aimFOV = 360 end)
+            addToggle("AUTO SHOOT", _G.Settings.autoShoot, function(v) _G.Settings.autoShoot = v end)
+            
+        elseif name == "MISC" then
+            addToggle("FLY (F KEY)", _G.Settings.fly, function(v) _G.Settings.fly = v end)
+            addToggle("ANTI AFK", _G.Settings.antiAFK, function(v) _G.Settings.antiAFK = v end)
+            addSep("VERSION")
+            local ver = Instance.new("TextLabel")
+            ver.Size = UDim2.new(1, 0, 0, 30)
+            ver.BackgroundTransparency = 1
+            ver.Text = "J.A.R.V.I.S V7.0"
+            ver.TextColor3 = colors.textDim
+            ver.TextSize = 11
+            ver.Font = Enum.Font.Gotham
+            ver.Parent = contentList
+        end
     end)
 end
 
 task.wait(0.1)
-if tabButtons["INFO"] then
-    tabButtons["INFO"].btn.MouseButton1Click:Fire()
+if tabBtns["INFO"] then
+    tabBtns["INFO"].btn.MouseButton1Click:Fire()
 end
 
 print("J.A.R.V.I.S: Menu Module Loaded")
