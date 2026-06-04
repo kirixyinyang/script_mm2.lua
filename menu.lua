@@ -848,21 +848,26 @@ if tabBtns["ESP"] and tabBtns["ESP"].btn then
     end
 end
 
-print("J.A.R.V.I.S: PART 4/4 LOADED - MENU COMPLETE")
-print("Нажми на зелёную кнопку JARVIS для открытия меню")
--- ========== ПЛАВАЮЩАЯ КНОПКА JARVIS (ИСПРАВЛЕННАЯ) ==========
+-- ========== ПЛАВАЮЩАЯ КНОПКА JARVIS (FIXED) ==========
 
+local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Ждём загрузки игры
+repeat task.wait() until game:IsLoaded()
+LocalPlayer:WaitForChild("PlayerGui")
 
 local floatingGui = Instance.new("ScreenGui")
 floatingGui.Name = "JarvisButton"
-floatingGui.Parent = game:GetService("CoreGui")
+floatingGui.Parent = LocalPlayer.PlayerGui
 floatingGui.ResetOnSpawn = false
 
 local jarvisBtn = Instance.new("ImageButton")
 jarvisBtn.Size = UDim2.new(0, 65, 0, 65)
-jarvisBtn.Position = UDim2.new(0.85, 0, 0.82, 0)
+-- Кнопка по центру экрана
+jarvisBtn.Position = UDim2.new(0.5, -32, 0.5, -32)
 jarvisBtn.BackgroundColor3 = Color3.fromRGB(80, 255, 100)
 jarvisBtn.BackgroundTransparency = 0.15
 jarvisBtn.BorderSizePixel = 0
@@ -886,12 +891,13 @@ btnLabel.Parent = jarvisBtn
 local pulse = TweenService:Create(jarvisBtn, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true), {BackgroundTransparency = 0.05})
 pulse:Play()
 
-local menuGui = game:GetService("CoreGui"):FindFirstChild("JARVIS_Menu")
+-- Поиск или создание меню
+local menuGui = LocalPlayer.PlayerGui:FindFirstChild("JARVIS_Menu")
 
 if not menuGui then
     menuGui = Instance.new("ScreenGui")
     menuGui.Name = "JARVIS_Menu"
-    menuGui.Parent = game:GetService("CoreGui")
+    menuGui.Parent = LocalPlayer.PlayerGui
     menuGui.ResetOnSpawn = false
     menuGui.Visible = false
     
@@ -944,7 +950,7 @@ if not menuGui then
     content.Size = UDim2.new(1, -110, 1, -55)
     content.Position = UDim2.new(0, 105, 0, 50)
     content.BackgroundTransparency = 1
-    content.Text = "Загрузка меню..."
+    content.Text = "Меню загружено"
     content.TextColor3 = Color3.fromRGB(220, 255, 220)
     content.TextSize = 14
     content.Parent = mainFrame
@@ -960,6 +966,7 @@ jarvisBtn.MouseButton1Click:Connect(function()
     jarvisBtn.BackgroundColor3 = Color3.fromRGB(80, 255, 100)
 end)
 
+-- Перетаскивание кнопки
 local dragActive = false
 local dragStartPos, btnStartPos
 local btnStartOffset = {X = 0, Y = 0}
@@ -989,4 +996,4 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
-print("J.A.R.V.I.S: КНОПКА ЗАГРУЖЕНА - нажми на зелёный круг")
+print("J.A.R.V.I.S: КНОПКА ПО ЦЕНТРУ ЭКРАНА - нажми на зелёный круг")
