@@ -1,4 +1,4 @@
--- J.A.R.V.I.S | Menu Module for MM2 (FULLY WORKING)
+-- J.A.R.V.I.S | Menu Module for MM2 (FIXED)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -10,7 +10,6 @@ local colors = {
     primary = Color3.fromRGB(80, 255, 100),
     dark = Color3.fromRGB(5, 12, 7),
     panel = Color3.fromRGB(8, 18, 10),
-    border = Color3.fromRGB(0, 80, 25),
     text = Color3.fromRGB(220, 255, 220),
     textDim = Color3.fromRGB(80, 140, 90),
     murderer = Color3.fromRGB(255, 50, 50),
@@ -21,13 +20,26 @@ local colors = {
     warning = Color3.fromRGB(255, 200, 0)
 }
 
-_G.Settings = {
-    playerESP = false, nametagESP = false, xray = false, highlightGun = false,
-    espColor = "Green", aimbot = false, aimTarget = "Murder", aimFOV = 250,
-    autoShoot = false, fly = false, flySpeed = 50, antiAFK = false
-}
+_G.Settings = _G.Settings or {}
+_G.Settings.playerESP = _G.Settings.playerESP or false
+_G.Settings.nametagESP = _G.Settings.nametagESP or false
+_G.Settings.xray = _G.Settings.xray or false
+_G.Settings.highlightGun = _G.Settings.highlightGun or false
+_G.Settings.espColor = _G.Settings.espColor or "Green"
+_G.Settings.aimbot = _G.Settings.aimbot or false
+_G.Settings.aimTarget = _G.Settings.aimTarget or "Murder"
+_G.Settings.aimFOV = _G.Settings.aimFOV or 250
+_G.Settings.autoShoot = _G.Settings.autoShoot or false
+_G.Settings.fly = _G.Settings.fly or false
+_G.Settings.antiAFK = _G.Settings.antiAFK or false
 
-function getRole(p)
+local function formatTime(s)
+    local m = math.floor((s % 3600) / 60)
+    local sec = math.floor(s % 60)
+    return string.format("%02d:%02d", m, sec)
+end
+
+local function getRole(p)
     if not p then return "Innocent" end
     local function h(n)
         if p.Character and p.Character:FindFirstChild(n) then return true end
@@ -40,13 +52,6 @@ function getRole(p)
     return "Innocent"
 end
 
-local function formatTime(s)
-    local m = math.floor((s % 3600) / 60)
-    local sec = math.floor(s % 60)
-    return string.format("%02d:%02d", m, sec)
-end
-
--- Главное окно
 local gui = Instance.new("ScreenGui")
 gui.Name = "JARVIS_Menu"
 gui.Parent = game:GetService("CoreGui")
@@ -54,7 +59,7 @@ gui.ResetOnSpawn = false
 
 local main = Instance.new("Frame")
 main.Size = UDim2.new(0, 340, 0, 450)
-main.Position = UDim2.new(0.5, -170, 0.2, 0)
+main.Position = UDim2.new(0.5, -170, 0.15, 0)
 main.BackgroundColor3 = colors.dark
 main.BackgroundTransparency = 0.1
 main.BorderSizePixel = 0
@@ -65,7 +70,6 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = main
 
--- Заголовок
 local title = Instance.new("Frame")
 title.Size = UDim2.new(1, 0, 0, 45)
 title.BackgroundColor3 = colors.panel
@@ -87,7 +91,6 @@ titleText.Parent = title
 
 local drag = false
 local dragStart, mainStart
-
 title.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch then
         drag = true
@@ -98,7 +101,6 @@ title.InputBegan:Connect(function(input)
         end)
     end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
     if drag and input.UserInputType == Enum.UserInputType.Touch then
         local delta = input.Position - dragStart
@@ -118,11 +120,8 @@ close.Parent = title
 local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(1, 0)
 closeCorner.Parent = close
-close.MouseButton1Click:Connect(function()
-    main.Visible = false
-end)
+close.MouseButton1Click:Connect(function() main.Visible = false end)
 
--- Боковое меню
 local sidebar = Instance.new("Frame")
 sidebar.Size = UDim2.new(0, 100, 1, -45)
 sidebar.Position = UDim2.new(0, 0, 0, 45)
@@ -130,11 +129,6 @@ sidebar.BackgroundColor3 = Color3.fromRGB(5, 14, 8)
 sidebar.BorderSizePixel = 0
 sidebar.Parent = main
 
-local sidebarCorner = Instance.new("UICorner")
-sidebarCorner.CornerRadius = UDim.new(0, 10)
-sidebarCorner.Parent = sidebar
-
--- Область контента (прокручиваемая)
 local content = Instance.new("ScrollingFrame")
 content.Size = UDim2.new(1, -110, 1, -55)
 content.Position = UDim2.new(0, 105, 0, 50)
@@ -159,13 +153,16 @@ pad.PaddingLeft = UDim.new(0, 8)
 pad.PaddingRight = UDim.new(0, 8)
 pad.Parent = content
 
--- Функции для создания элементов
+local order = 0
+
 local function addToggle(text, setting, callback)
+    order = order + 1
     local row = Instance.new("Frame")
     row.Size = UDim2.new(1, 0, 0, 44)
     row.BackgroundColor3 = colors.panel
     row.BackgroundTransparency = 0.3
-    row.Parent = contentList
+    row.LayoutOrder = order
+    row.Parent = content
     
     local rowCorner = Instance.new("UICorner")
     rowCorner.CornerRadius = UDim.new(0, 8)
@@ -185,7 +182,7 @@ local function addToggle(text, setting, callback)
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(0, 40, 0, 20)
     bg.Position = UDim2.new(1, -50, 0.5, -10)
-    bg.BackgroundColor3 = setting and colors.primary or Color3.fromRGB(40, 40, 50)
+    bg.BackgroundColor3 = setting and colors.primary or Color3.fromRGB(40,40,50)
     bg.Parent = row
     
     local bgCorner = Instance.new("UICorner")
@@ -195,23 +192,23 @@ local function addToggle(text, setting, callback)
     local knob = Instance.new("Frame")
     knob.Size = UDim2.new(0, 16, 0, 16)
     knob.Position = setting and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
-    knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    knob.BackgroundColor3 = Color3.fromRGB(255,255,255)
     knob.Parent = bg
     
     local knobCorner = Instance.new("UICorner")
     knobCorner.CornerRadius = UDim.new(1, 0)
     knobCorner.Parent = knob
     
+    local val = setting
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 1, 0)
     btn.BackgroundTransparency = 1
     btn.Text = ""
     btn.Parent = row
     
-    local val = setting
     btn.MouseButton1Click:Connect(function()
         val = not val
-        bg.BackgroundColor3 = val and colors.primary or Color3.fromRGB(40, 40, 50)
+        bg.BackgroundColor3 = val and colors.primary or Color3.fromRGB(40,40,50)
         local goal = val and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
         TweenService:Create(knob, TweenInfo.new(0.2), {Position = goal}):Play()
         callback(val)
@@ -219,6 +216,7 @@ local function addToggle(text, setting, callback)
 end
 
 local function addButton(text, color, callback)
+    order = order + 1
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 0, 42)
     btn.BackgroundColor3 = color or colors.panel
@@ -227,7 +225,8 @@ local function addButton(text, color, callback)
     btn.TextColor3 = colors.text
     btn.TextSize = 12
     btn.Font = Enum.Font.GothamBold
-    btn.Parent = contentList
+    btn.LayoutOrder = order
+    btn.Parent = content
     
     local btnCorner = Instance.new("UICorner")
     btnCorner.CornerRadius = UDim.new(0, 8)
@@ -237,6 +236,7 @@ local function addButton(text, color, callback)
 end
 
 local function addSep(text)
+    order = order + 1
     local sep = Instance.new("TextLabel")
     sep.Size = UDim2.new(1, 0, 0, 24)
     sep.BackgroundTransparency = 1
@@ -245,15 +245,18 @@ local function addSep(text)
     sep.TextSize = 10
     sep.Font = Enum.Font.GothamSemibold
     sep.TextXAlignment = Enum.TextXAlignment.Left
-    sep.Parent = contentList
+    sep.LayoutOrder = order
+    sep.Parent = content
 end
 
 local function addInfo(label, value, color)
+    order = order + 1
     local row = Instance.new("Frame")
     row.Size = UDim2.new(1, 0, 0, 36)
     row.BackgroundColor3 = colors.panel
     row.BackgroundTransparency = 0.3
-    row.Parent = contentList
+    row.LayoutOrder = order
+    row.Parent = content
     
     local rowCorner = Instance.new("UICorner")
     rowCorner.CornerRadius = UDim.new(0, 8)
@@ -284,14 +287,15 @@ local function addInfo(label, value, color)
     return val
 end
 
--- Очистка контента
 local function clear()
-    for _, child in pairs(contentList:GetChildren()) do
-        child:Destroy()
+    order = 0
+    for _, child in pairs(content:GetChildren()) do
+        if child:IsA("Frame") or child:IsA("TextButton") or child:IsA("TextLabel") then
+            child:Destroy()
+        end
     end
 end
 
--- Вкладки
 local tabs = {"INFO", "KILLER", "ESP", "AIM", "MISC"}
 local tabBtns = {}
 local current = nil
@@ -342,7 +346,9 @@ for i, name in pairs(tabs) do
             warn.TextSize = 10
             warn.Font = Enum.Font.Gotham
             warn.TextWrapped = true
-            warn.Parent = contentList
+            warn.LayoutOrder = order + 1
+            order = order + 1
+            warn.Parent = content
             
             task.spawn(function()
                 while current == "INFO" do
@@ -402,13 +408,57 @@ for i, name in pairs(tabs) do
             ver.TextColor3 = colors.textDim
             ver.TextSize = 11
             ver.Font = Enum.Font.Gotham
-            ver.Parent = contentList
+            ver.LayoutOrder = order + 1
+            order = order + 1
+            ver.Parent = content
         end
     end)
 end
 
 task.wait(0.1)
 if tabBtns["INFO"] then
+    tabBtns["INFO"].btn.MouseButton1Click:Connect(function()
+        for _, tb in pairs(tabBtns) do
+            tb.btn.TextColor3 = colors.textDim
+            tb.line.Visible = false
+        end
+        tabBtns["INFO"].btn.TextColor3 = colors.primary
+        tabBtns["INFO"].line.Visible = true
+        current = "INFO"
+        clear()
+        addInfo("NICK", LocalPlayer.Name, colors.primary)
+        local roleVal = addInfo("ROLE", getRole(LocalPlayer), getRole(LocalPlayer) == "Murder" and colors.murderer or (getRole(LocalPlayer) == "Sheriff" and colors.sheriff or colors.innocent))
+        local timeVal = addInfo("TIME", "00:00", colors.primary)
+        addInfo("STATUS", "ACTIVE", colors.primary)
+        addInfo("RISK", "DANGER!", colors.danger)
+        addSep("WARNING")
+        local warn = Instance.new("TextLabel")
+        warn.Size = UDim2.new(1, 0, 0, 40)
+        warn.BackgroundTransparency = 1
+        warn.Text = "Using cheats may result in a ban. Use at your own risk!"
+        warn.TextColor3 = colors.warning
+        warn.TextSize = 10
+        warn.Font = Enum.Font.Gotham
+        warn.TextWrapped = true
+        warn.LayoutOrder = order + 1
+        order = order + 1
+        warn.Parent = content
+        
+        task.spawn(function()
+            while current == "INFO" do
+                local elapsed = tick() - StartTime
+                if timeVal then timeVal.Text = formatTime(elapsed) end
+                if roleVal then
+                    local newRole = getRole(LocalPlayer)
+                    roleVal.Text = newRole
+                    if newRole == "Murder" then roleVal.TextColor3 = colors.murderer
+                    elseif newRole == "Sheriff" then roleVal.TextColor3 = colors.sheriff
+                    else roleVal.TextColor3 = colors.innocent end
+                end
+                task.wait(1)
+            end
+        end)
+    end)
     tabBtns["INFO"].btn.MouseButton1Click:Fire()
 end
 
